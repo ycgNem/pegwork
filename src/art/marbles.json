@@ -1,0 +1,94 @@
+{
+ "frames": [
+  {
+   "filename": "marble:steel:0",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 6,
+    "h": 6
+   },
+   "rotated": false,
+   "trimmed": false,
+   "pivot": {
+    "x": 3,
+    "y": 3
+   },
+   "sourceSize": {
+    "w": 6,
+    "h": 6
+   },
+   "duration": 120
+  },
+  {
+   "filename": "marble:steel:1",
+   "frame": {
+    "x": 8,
+    "y": 1,
+    "w": 6,
+    "h": 6
+   },
+   "rotated": false,
+   "trimmed": false,
+   "pivot": {
+    "x": 3,
+    "y": 3
+   },
+   "sourceSize": {
+    "w": 6,
+    "h": 6
+   },
+   "duration": 120
+  },
+  {
+   "filename": "marble:steel:2",
+   "frame": {
+    "x": 15,
+    "y": 1,
+    "w": 6,
+    "h": 6
+   },
+   "rotated": false,
+   "trimmed": false,
+   "pivot": {
+    "x": 3,
+    "y": 3
+   },
+   "sourceSize": {
+    "w": 6,
+    "h": 6
+   },
+   "duration": 120
+  },
+  {
+   "filename": "marble:steel:3",
+   "frame": {
+    "x": 22,
+    "y": 1,
+    "w": 6,
+    "h": 6
+   },
+   "rotated": false,
+   "trimmed": false,
+   "pivot": {
+    "x": 3,
+    "y": 3
+   },
+   "sourceSize": {
+    "w": 6,
+    "h": 6
+   },
+   "duration": 120
+  }
+ ],
+ "meta": {
+  "app": "pixelstudio (Pegwork art/common.py)",
+  "image": "marbles.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 29,
+   "h": 8
+  },
+  "scale": "1"
+ }
+}

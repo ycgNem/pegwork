@@ -1,0 +1,54 @@
+{
+ "frames": [
+  {
+   "filename": "peg",
+   "frame": {
+    "x": 1,
+    "y": 1,
+    "w": 8,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "pivot": {
+    "x": 4,
+    "y": 4
+   },
+   "sourceSize": {
+    "w": 8,
+    "h": 8
+   },
+   "duration": 100
+  },
+  {
+   "filename": "peg:bent",
+   "frame": {
+    "x": 10,
+    "y": 1,
+    "w": 8,
+    "h": 8
+   },
+   "rotated": false,
+   "trimmed": false,
+   "pivot": {
+    "x": 4,
+    "y": 4
+   },
+   "sourceSize": {
+    "w": 8,
+    "h": 8
+   },
+   "duration": 100
+  }
+ ],
+ "meta": {
+  "app": "pixelstudio (Pegwork art/common.py)",
+  "image": "parts.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 19,
+   "h": 10
+  },
+  "scale": "1"
+ }
+}

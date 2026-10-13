@@ -1,0 +1,10 @@
+node_modules
+dist
+e2e/out
+*.log
+release
+.claude/launch.json
+.claude/settings.local.json
+art/**/preview*.png
+art/**/preview*.gif
+art/**/__pycache__

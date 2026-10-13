@@ -1,0 +1,47 @@
+{
+  "name": "pegwork",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "A pixel-art gambling roguelike where you build the marble machine you gamble on.",
+  "author": "jacksonwalley",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "shots": "node e2e/shots.mjs",
+    "screens": "node e2e/screens.mjs",
+    "perf": "node e2e/perf.mjs",
+    "desktop": "npm run build && electron .",
+    "dist:win": "npm run build && electron-builder --win nsis portable"
+  },
+  "devDependencies": {
+    "@types/node": "^22.9.0",
+    "electron": "^33.4.11",
+    "electron-builder": "^25.1.8",
+    "playwright": "^1.48.2",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "vitest": "^2.1.4"
+  },
+  "dependencies": {
+    "jsfxr": "^1.4.1"
+  },
+  "build": {
+    "appId": "com.jacksonwalley.pegwork",
+    "productName": "Pegwork",
+    "directories": { "output": "release", "buildResources": "build" },
+    "files": ["dist/**/*", "electron/**/*", "package.json"],
+    "win": { "target": ["nsis", "portable"], "signAndEditExecutable": false },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "artifactName": "Pegwork-Setup-${version}.exe"
+    },
+    "portable": { "artifactName": "Pegwork-Portable-${version}.exe" }
+  }
+}
