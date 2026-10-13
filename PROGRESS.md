@@ -1,6 +1,14 @@
-# Progress — Pegwork
+# Progress — Carpet Joint (repo: pegwork)
 
 What is built. Newest first.
+
+## 2026-10-12 — Re-planned as Carpet Joint
+
+- With the owner: the marble board is dropped; the game is now a casino tycoon roguelike on a
+  neon 1970s strip (DECISIONS #19–#29). `PLAN.md`, `DESIGN.md`, `ROADMAP.md`, `CLAUDE.md`,
+  `STYLE.md`, `HANDOFF.md`, `IDEAS.md` and `START-HERE.md` rewritten. **No code changed**:
+  everything below this entry describes the marble-board build, which Milestone 0 of the new
+  roadmap wipes.
 
 ## 2026-10-12 — Published
 
@@ -74,11 +82,13 @@ histogram, the results; the overlap sweep (6 states); perf.
 
 - PLAN, DESIGN, STYLE, CLAUDE, ROADMAP, START-HERE, HANDOFF, DECISIONS, IDEAS written. No code.
 
-## Milestones
+## Milestones (new roadmap)
 
 | Milestone | Status |
 |---|---|
-| M0 — Foundation and the physics | done (2026-10-12) |
-| M1 — The slice (town 1) | not started |
+| M0 — Wipe and foundation | not started (waiting for the owner's roadmap review) |
+| M1 — The slice (nights 1–4, one rival) | not started |
 | M2 — The gate | not started |
 | M3 — The art pass | waiting for the gate |
+
+The old marble-board roadmap: its M0 was done on 2026-10-12; the rest is dropped.
