@@ -211,7 +211,7 @@ histogram, the results; the overlap sweep (6 states); perf.
 | Milestone | Status |
 |---|---|
 | M0 — Wipe and foundation | done (2026-10-12) |
-| M1 — The slice (nights 1–4, one rival) | not started |
+| M1 — The slice (nights 1–4, one rival) | in progress: stages A–C done (season, staff and cheats, gaffs and heat); D–G next |
 | M2 — The gate | not started |
 | M3 — The art pass | waiting for the gate |
 

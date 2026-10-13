@@ -2,29 +2,43 @@
 
 Read this first, every session.
 
-## Where things stand (2026-10-12)
+## Where things stand (2026-10-12, end of session)
 
-**Milestone 0 is done** (PROGRESS.md): the marble board is wiped; the foundation of Carpet Joint
-is built: the 640x360 screen, the exact odds calculator, the floor sim with gamblers who choose,
-walk, bet and leave, the cage and busting, the Sweat, the debug floor, the art-direction test
-sprites, the four agents, 38 tests, the e2e scripts.
+**Milestone 0 is done**, and **Milestone 1 (the slice) is three stages in** (PROGRESS.md):
 
-- **Pushed** to `main`: https://ycgnem.github.io/pegwork/ shows the M0 debug floor (stages A
-  and B are committed locally, not pushed; push when the owner says).
-- **Now: Milestone 1, the slice** (ROADMAP.md), approved by the owner (DECISIONS #38). Done:
-  stage A (the season, crowd share, the Undercutter, the buyout; #39–#42), stage B (staff
-  and cheats; #43–#45) and stage C (shaved dice, Heat, the inspector, the raid; #46–#48).
-  **Next: stage D** (whales with demands, the Sweat's arrival forecast; §11.2, §11.7),
-  E (place/move/sell on the floor, the full game editor), F (the Web fragment: Bookmaker, 30
-  nodes, 3 Specials, 1 House Rule, Know-How), G (title, results, settings, lesson cards,
-  indie-critic review).
+- **Stage A** (the season: day/night over 4 nights, the strip's crowd share, the Undercutter,
+  the buyout; DECISIONS #39–#42).
+- **Stage B** (staff and cheats: dealers, pit bosses, security, cashier, wages, the hiring hall;
+  the dice slider and the past-poster, spotting, accusing; #43–#45).
+- **Stage C** (shaved dice, Heat, the Gaming Commission's inspector, the raid, the license;
+  #46–#48).
+- **Pushed** to `main` and live at https://ycgnem.github.io/pegwork/ (the debug floor with all of
+  the above). 64 tests, 19 screens with 0 overlap issues.
 
-**Settled with the owner:** chibi proportions, Endesga 32 (#38). Still unanswered from the
-re-plan: anything in PLAN.md to cut.
+**Next: stage D**, then E, F, G (ROADMAP.md Milestone 1):
 
-The M0 balance problem (#36) is fixed by #40–#42: pace test §11.1 passes. Over 60 seeds the
-slice is hard: greedy wins 7%, the 8% tuner 28% (#48). Watch that when stage E/F add tools: a
-good human should beat the tuner by a lot.
+- **D:** high rollers with demands (comp, raise the limit, a private table; `answerWhale`), one a
+  night from night 2; the Sweat's arrival forecast (it still holds the seated crowd fixed, #33);
+  pace tests §11.2 (the Sweat matters) and §11.7 (the Sweat is honest) at slice scale.
+- **E:** the floor: place, move and sell tables and fixtures (bump `floor.version`); the full game
+  editor (the bet menu, add/remove bets, the color rule); the eye-in-the-sky replay for cheats.
+- **F:** the Web fragment: the Bookmaker background, 30 nodes around its start (3 Specials, 1
+  House Rule), Know-How, the web UI (pan, zoom, search). Every node declares what it `moves`.
+- **G:** title, results, settings; lesson cards (first paytable edit, first whale, first cheat,
+  first Sweat over 10%); `npm run screens`/`shots` for all of it; the `indie-critic` review; then
+  the owner plays it (Milestone 2, the gate).
+
+**Open questions for the owner:** anything in PLAN.md to cut (unanswered since the re-plan).
+Stage C made one design call the owner may want to revisit: the shave is a *tilt* that only pays
+when the paytable steers the crowd onto the shaved side (#46).
+
+**Balance to watch:** over 60 seeds the slice is hard: greedy wins 7%, the 8% tuner 28% (#48);
+the gaffer 7/40 vs the tuner's 12/40 (§11.4). When E and F add tools, a good human should beat the
+tuner by a lot; if playtests say the slice is too hard, the buyout price (§7) is the first knob.
+
+**Naming drift:** CLAUDE.md's command list says `setGaff`, `assignStaff`, `eject`; the code has
+`gaff`, `assign`, and `accuse` (security walks out spotted cheats on its own). Rename or update
+CLAUDE.md when stage E touches the commands.
 
 ## Publishing and identity
 
