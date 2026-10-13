@@ -1,14 +1,13 @@
-// The app: the scaler, the loop, input, sound, and the current screen (Milestone 0: the debug
-// board). The sim ticks at a fixed 60 Hz; frames interpolate marbles with the loop's alpha.
+// The app: the scaler, the loop, input, sound, and the current screen. The marble board was wiped
+// (DECISIONS #19); until Milestone 0's debug floor lands this draws a placeholder card.
 import { GameLoop } from '../engine/loop';
 import { Input } from '../engine/input';
 import { Audio } from '../engine/audio/audio';
 import { UI } from '../ui/ui';
-import { definePlaceholders } from '../render/placeholders';
 import { loadSheets } from '../render/sheets';
 import { resetSprites } from '../render/atlas';
-import { Scaler } from './screen';
-import { DebugScreen } from './debug';
+import { C } from '../data/palette';
+import { Scaler, SCREEN_W, SCREEN_H } from './screen';
 import { loadSettings, saveSettings } from './settings';
 
 export class App {
@@ -17,7 +16,6 @@ export class App {
   ui = new UI();
   audio: Audio;
   loop: GameLoop;
-  screen: DebugScreen;
   /** e2e: draw every frame at this alpha instead of the loop's (set by renderNow) */
   fixedAlpha: number | null = null;
 
@@ -27,27 +25,22 @@ export class App {
     const settings = loadSettings();
     this.audio = new Audio(settings);
     this.audio.muted = settings.muted;
-    definePlaceholders();
     loadSheets().then(() => resetSprites());
-    this.screen = new DebugScreen();
-    this.screen.sfx = (id, v, p) => this.audio.sfx(id, v, p);
     this.ui.sfx = (id) => this.audio.sfx(id);
     const unlock = () => this.audio.unlock();
     window.addEventListener('pointerdown', unlock);
     window.addEventListener('keydown', unlock);
-    this.loop = new GameLoop(() => this.screen.tick(), (dt, alpha) => this.frame(dt, alpha));
+    this.loop = new GameLoop(() => {}, (dt, alpha) => this.frame(dt, alpha));
     this.loop.start();
     (window as any).__app = this;
   }
 
-  /** e2e: draw one frame now at a fixed alpha (and keep drawing at it). */
   renderNow(alpha: number) {
     this.fixedAlpha = alpha;
     this.frame(0, alpha);
   }
 
-  private frame(dt: number, alpha: number) {
-    if (this.fixedAlpha !== null) alpha = this.fixedAlpha;
+  private frame(dt: number, _alpha: number) {
     const ctx = this.scaler.ctx;
     const inside = this.input.mouse.x >= 0;
     const [mx, my] = inside ? this.scaler.toLogical(this.input.mouse.x, this.input.mouse.y) : [-1, -1];
@@ -57,7 +50,9 @@ export class App {
       saveSettings({ ...this.audio.vol, muted: this.audio.muted });
     }
     this.ui.begin(ctx, this.input, mx, my, dt);
-    this.screen.frame(ctx, this.ui, this.input, alpha);
+    this.ui.fill(0, 0, SCREEN_W, SCREEN_H, C.ink);
+    this.ui.text('CARPET JOINT', SCREEN_W / 2, SCREEN_H / 2 - 10, C.pink, { align: 'center' });
+    this.ui.text('rebuilding: Milestone 0', SCREEN_W / 2, SCREEN_H / 2 + 4, C.steel, { align: 'center' });
     this.ui.end();
     this.scaler.present();
     this.audio.update();
