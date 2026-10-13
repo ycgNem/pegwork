@@ -6,6 +6,8 @@ import { TIME } from '../../data/time';
 import { standUp } from '../choice';
 import type { Command } from '../commands';
 import { spawnGambler } from './arrivals';
+import { beginNight, buyoutPrice } from '../season';
+import { STRIP } from '../../data/strip';
 import type { GameState } from '../state';
 
 function reject(g: GameState, reason: string) {
@@ -26,7 +28,14 @@ export function withPays(game: GameDef, bet: number, pays10: number, hits?: numb
   return { ...game, bets };
 }
 
+/** Commands that only make sense in the day, or only at night. */
+const DAY_ONLY = new Set(['openDoors', 'transferCash', 'buyout', 'closeSeason']);
+const NIGHT_ONLY = new Set(['callArmoredCar', 'spawn']);
+
 function apply(g: GameState, c: Command) {
+  if (g.result !== 'playing') return reject(g, 'the season is over');
+  if (DAY_ONLY.has(c.t) && g.phase !== 'day') return reject(g, 'that waits for the day');
+  if (NIGHT_ONLY.has(c.t) && g.phase !== 'night') return reject(g, 'that needs the doors open');
   const table = 'table' in c ? g.tables[c.table] : undefined;
   if ('table' in c && !table) return reject(g, 'no such table');
   switch (c.t) {
@@ -67,6 +76,33 @@ function apply(g: GameState, c: Command) {
     }
     case 'spawn':
       spawnGambler(g, c.type);
+      break;
+    case 'openDoors':
+      if (g.night > STRIP.sliceNights) return reject(g, 'the season is over: buy the rival out or walk away');
+      beginNight(g);
+      break;
+    case 'transferCash': {
+      const to = c.cents;
+      if ((to > 0 && to > g.bank) || (to < 0 && -to > g.cage)) return reject(g, 'not that much there');
+      g.bank -= to;
+      g.cage += to;
+      break;
+    }
+    case 'buyout': {
+      const price = buyoutPrice(g);
+      if (g.rival.bought) return reject(g, 'already bought');
+      if (g.bank < price) return reject(g, "the bank can't cover the price");
+      g.bank -= price;
+      g.rival.bought = true;
+      g.result = 'won';
+      g.now.push({ t: 'boughtOut', price });
+      g.now.push({ t: 'seasonOver', result: 'won', reason: 'You bought out the Silver Dollar.' });
+      break;
+    }
+    case 'closeSeason':
+      g.result = 'lost';
+      g.lostReason = 'The Silver Dollar still runs the strip.';
+      g.now.push({ t: 'seasonOver', result: 'lost', reason: g.lostReason });
       break;
   }
 }

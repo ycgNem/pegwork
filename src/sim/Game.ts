@@ -9,6 +9,8 @@ import { Rng, hashStr } from '../engine/rng';
 import type { Command, LoggedCommand } from './commands';
 import type { GameEvent } from './events';
 import type { GameState } from './state';
+import { beginNight, seedRival } from './season';
+import { UNDERCUTTER } from '../data/strip';
 import { clockSystem } from './systems/clock';
 import { commandSystem } from './systems/commands';
 import { arrivalSystem } from './systems/arrivals';
@@ -44,6 +46,8 @@ export const SYSTEMS = [
 
 export interface GameOptions {
   seed: number;
+  /** open night 1's doors at once (tests and bots); otherwise the season starts on day 1 */
+  open?: boolean;
   floor?: FloorDef;
   cage?: number;
   bank?: number;
@@ -65,6 +69,19 @@ export class Game {
     this.s = {
       seed: opts.seed,
       tick: 0,
+      phase: 'day',
+      night: 1,
+      nightStart: 0,
+      arrivals: 0,
+      share: 0,
+      reputation: 0,
+      rival: {
+        id: 'undercutter', edge: UNDERCUTTER.edge, reputation: UNDERCUTTER.reputation * 1000, cash: UNDERCUTTER.cash,
+        profits: [], share: 0, buffet: false, lastMove: null, rng: new Rng(hashStr(`rival:${opts.seed}`)), bought: false,
+      },
+      result: 'playing',
+      lostReason: '',
+      history: [],
       crowdRng: new Rng(hashStr(`crowd:${opts.seed}`)),
       floor: { w: floor.w, h: floor.h, door: [...floor.door], fixtures: floor.fixtures.map((f) => ({ ...f })), version: 0 },
       tables: floor.tables.map((t, i) => ({
@@ -88,6 +105,11 @@ export class Game {
       settle: [],
       stats: { arrived: 0, left: 0, leftUp: 0, leftBroke: 0, rounds: 0, handle: 0, net: 0 },
     };
+    seedRival(this.s);
+    if (opts.open) {
+      beginNight(this.s);
+      this.s.now = [];
+    }
   }
 
   /** Queue a command for the next tick. */
@@ -102,7 +124,7 @@ export class Game {
    */
   applyNow(cmd: Command): boolean {
     const g = this.s;
-    if (g.tick >= NIGHT_TICKS) return false;
+    if (g.phase === 'night' && g.tick - g.nightStart >= NIGHT_TICKS) return false;
     const queued = g.pending;
     g.pending = [cmd];
     g.now = [];
@@ -142,8 +164,13 @@ export class Game {
     };
     // money above 2^31 cents is split in two words
     const big = (v: number) => { w(v % 2147483648); w(Math.floor(v / 2147483648)); };
-    w(g.tick); w(g.crowdRng.s); big(g.cage); big(g.bank); w(g.wom); w(g.nextAgent);
+    w(g.tick); w(g.crowdRng.s); big(g.cage + 2 ** 40); big(g.bank + 2 ** 40); w(g.wom); w(g.nextAgent);
     w(g.busted ? 1 : 0); w(g.nightOver ? 1 : 0);
+    w(g.phase === 'night' ? 1 : 0); w(g.night); w(g.nightStart); w(g.arrivals); w(g.share); w(g.reputation);
+    w(g.result === 'playing' ? 0 : g.result === 'won' ? 1 : 2);
+    const r = g.rival;
+    w(Math.round(r.edge * 1e6)); w(r.reputation); big(r.cash + 2 ** 40); w(r.share); w(r.buffet ? 1 : 0); w(r.rng.s); w(r.bought ? 1 : 0);
+    for (const p of r.profits) big(p + 2 ** 40);
     for (const t of g.tables) {
       w(t.rng.s); w(t.acc); w(t.open ? 1 : 0); w(t.min); w(t.max); w(t.rounds); big(t.handle); big(t.net + 2 ** 40);
       for (const s of t.seats) w(s);
@@ -164,6 +191,8 @@ export class Game {
       while (i < log.length && log[i].tick === game.s.tick) game.command(log[i++].cmd);
       game.tick();
     }
+    // orders given after the last tick (a final day's buyout or walk-away) apply as they did live
+    while (i < log.length) game.applyNow(log[i++].cmd);
     return game;
   }
 }

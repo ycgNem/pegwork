@@ -16,7 +16,15 @@ export type Command =
   /** the armored car: cents from the bank to the cage, arriving in an hour */
   | { t: 'callArmoredCar'; cents: number }
   /** debug floor only: a gambler of this type walks in now */
-  | { t: 'spawn'; type: GamblerType };
+  | { t: 'spawn'; type: GamblerType }
+  /** day: open tonight's doors */
+  | { t: 'openDoors' }
+  /** day: move cash between the bank and the cage at once (positive: into the cage) */
+  | { t: 'transferCash'; cents: number }
+  /** day: buy the rival out from the bank */
+  | { t: 'buyout' }
+  /** the last day of the slice: walk away without buying */
+  | { t: 'closeSeason' };
 
 /** A command and the tick it was applied on: a night's whole history (it replays from it). */
 export interface LoggedCommand { tick: number; cmd: Command }

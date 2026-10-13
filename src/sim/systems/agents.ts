@@ -49,6 +49,7 @@ function walk(g: GameState, a: Gambler): boolean {
 }
 
 export function agentSystem(g: GameState) {
+  if (g.phase !== 'night') return;
   for (const a of g.agents) {
     if (a.phase === 'gone') continue;
     a.px = a.x;

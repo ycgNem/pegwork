@@ -7,7 +7,7 @@ import { blockedGrid, tileOf } from '../src/sim/floor';
 import type { GameEvent } from '../src/sim/events';
 
 function session(seed: number) {
-  const g = new Game({ seed, noArrivals: true });
+  const g = new Game({ open: true, seed, noArrivals: true });
   g.command({ t: 'spawn', type: 'tourist' });
   const events: GameEvent[] = [];
   const blocked = blockedGrid(g.s);
@@ -39,7 +39,7 @@ describe('one gambler, one session', () => {
     });
 
   it('a gambler who cannot afford the minimum never sits', () => {
-    const g = new Game({ seed: 9, noArrivals: true });
+    const g = new Game({ open: true, seed: 9, noArrivals: true });
     g.command({ t: 'setLimits', table: 0, min: 2500, max: 12500 });
     g.command({ t: 'setLimits', table: 1, min: 2500, max: 12500 });
     g.command({ t: 'closeTable', table: 0 });
@@ -53,7 +53,7 @@ describe('one gambler, one session', () => {
   });
 
   it('a win bigger than the cage busts the house', () => {
-    const g = new Game({ seed: 3, noArrivals: true, cage: 1000 });
+    const g = new Game({ open: true, seed: 3, noArrivals: true, cage: 1000 });
     g.command({ t: 'spawn', type: 'highRoller' });
     const events: GameEvent[] = [];
     for (let t = 0; t < 4 * TIME.ticksPerHour && !g.s.busted; t++) {

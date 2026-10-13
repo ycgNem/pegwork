@@ -8,6 +8,7 @@ const { browser, page, errors } = await open();
 const sw = await page.evaluate(async () => {
   const { sweat } = await import('/src/sim/sweat.ts');
   const s = window.__app.screen;
+  s.order({ t: 'openDoors' });
   for (const tb of [0, 1]) s.order({ t: 'setLimits', table: tb, min: 500, max: 50000 });
   for (let i = 0; i < 14; i++) s.order({ t: 'spawn', type: i % 5 ? 'tourist' : 'highRoller' });
   // a deep cage so the whales can't bust the house before we measure

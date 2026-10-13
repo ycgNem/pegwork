@@ -56,7 +56,9 @@ async function shot(name) {
 const H = 1620;
 const order = (cmd) => page.evaluate((c) => window.__app.screen.order(c), cmd);
 const SC = {
-  'floor-open': async () => { await page.mouse.move(1, 1); },
+  'day-1': async () => { await page.mouse.move(1, 1); },
+  'day-1-buy-tip': async () => { const [x, y] = await toPage(page, 82 + 300 - 60, 70 + 22 + 10 + 10 + 14 + 3); await page.mouse.move(x, y); },
+  'floor-open': async () => { await page.mouse.move(1, 1); await order({ t: 'openDoors' }); },
   'floor-busy': async () => { await step(page, Math.round(2.5 * H)); },
   'bet-tooltip': async () => { const [x, y] = await toPage(page, 470, 18 + 28 + 11 + 2 * 11 + 3); await page.mouse.move(x, y); },
   'sweat-tooltip': async () => { const [x, y] = await toPage(page, 480, 16 + 184 + 17 + 14 + 3); await page.mouse.move(x, y); },
@@ -75,11 +77,15 @@ const SC = {
     await order({ t: 'spawn', type: 'highRoller' });
     await step(page, 400);
   },
-  'count-room': async () => { await step(page, 10 * H); },
+  'day-2': async () => {
+    await page.evaluate(() => { window.__app.screen.game.s.cage = 5000000; });
+    await step(page, 10 * H);
+  },
   'bust': async () => {
     await page.evaluate(() => {
       const s = window.__app.screen;
-      s.newNight();
+      s.newSeason();
+      s.order({ t: 'openDoors' });
       s.order({ t: 'setLimits', table: 1, min: 2500, max: 250000 });
       s.order({ t: 'setLimits', table: 0, min: 2500, max: 250000 });
       for (let i = 0; i < 3; i++) s.order({ t: 'spawn', type: 'highRoller' });

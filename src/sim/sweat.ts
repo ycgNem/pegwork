@@ -7,7 +7,7 @@ import { NIGHT_TICKS, TIME } from '../data/time';
 import { Rng } from '../engine/rng';
 import { compile, type Compiled } from './odds/odds';
 import { settle, stakeFor } from './settle';
-import type { GameState } from './state';
+import { nightTick, type GameState } from './state';
 
 export interface SweatResult {
   /** chance of a bust before 6am, and its standard error */
@@ -69,7 +69,7 @@ function tabulate(t: TablePlan) {
  * enumerated tables use their tabulated rounds. Both draw the same outcomes from the same stream.
  */
 export function sweat(g: GameState, n: number, seed: number, exact = false): SweatResult {
-  const left = Math.max(0, NIGHT_TICKS - g.tick);
+  const left = g.phase === 'night' && !g.nightOver ? Math.max(0, NIGHT_TICKS - nightTick(g)) : 0;
   const tables: TablePlan[] = [];
   const steps: Step[] = [];
   let topWin = 0;

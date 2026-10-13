@@ -25,8 +25,8 @@ export interface GamblerTypeDef {
 export const GAMBLER_TYPES: Record<GamblerType, GamblerTypeDef> = {
   tourist: {
     type: 'tourist', label: 'Tourist', bankroll: [6000, 20000], baseBet: [200, 500], patienceMin: 90,
-    thrill: 500, sharpness: 100, wom: 1000, stopLoss: 1000, winGoal: [1500, 3000], arrivalWeight: 60,
-    derivation: 'DESIGN.md §5: $60-200, $2-5 bets, 90 min, thrill 0.5, sharpness 0.1, WoM 1.0',
+    thrill: 500, sharpness: 100, wom: 1000, stopLoss: 800, winGoal: [1500, 3000], arrivalWeight: 60,
+    derivation: 'DESIGN.md §5: $60-200, $2-5 bets, 90 min, thrill 0.5, sharpness 0.1, WoM 1.0, stops 80% down',
   },
   local: {
     type: 'local', label: 'Local', bankroll: [10000, 30000], baseBet: [500, 500], patienceMin: 150,
@@ -35,8 +35,8 @@ export const GAMBLER_TYPES: Record<GamblerType, GamblerTypeDef> = {
   },
   conventioneer: {
     type: 'conventioneer', label: 'Conventioneer', bankroll: [20000, 50000], baseBet: [500, 1000], patienceMin: 60,
-    thrill: 600, sharpness: 200, wom: 1500, stopLoss: 1000, winGoal: [1500, 3000], arrivalWeight: 15,
-    derivation: 'DESIGN.md §5: $200-500, $5-10 bets, 60 min, thrill 0.6, sharpness 0.2, WoM 1.5',
+    thrill: 600, sharpness: 200, wom: 1500, stopLoss: 800, winGoal: [1500, 3000], arrivalWeight: 15,
+    derivation: 'DESIGN.md §5: $200-500, $5-10 bets, 60 min, thrill 0.6, sharpness 0.2, WoM 1.5, stops 80% down',
   },
   highRoller: {
     type: 'highRoller', label: 'High roller', bankroll: [500000, 5000000], baseBet: [10000, 100000], patienceMin: 120,
@@ -59,12 +59,9 @@ export const CHOICE = {
   derivation: 'DESIGN.md §5: score = 1.0 H + 0.6 thrill log2(top) + 0.4 buzz - 8 sharpness perceivedEdge - 0.05 walk, softmax at T 0.25',
 } as const;
 
-/** Tonight's crowd for the M0 debug floor: the strip's population times your share (§7). */
+/** When tonight's crowd (DESIGN.md §7: the strip times your share) walks in. */
 export const CROWD = {
-  stripPopulation: 600,
-  /** your house's starting share, per mille */
-  startShare: 120,
   /** arrivals come in the first 8 game hours, evenly */
   arrivalHours: 8,
-  derivation: 'DESIGN.md §7: 600 gamblers a night, about 12% of them yours: 72 arrivals over 8pm-4am',
+  derivation: 'DESIGN.md §1: arrivals at an even seeded rate over the first 8 game hours (8pm-4am)',
 } as const;

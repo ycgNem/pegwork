@@ -8,8 +8,11 @@ const { browser, page, errors } = await open();
 const H = 1620;
 const shot = async (name) => { await page.screenshot({ path: `${out}/${name}.png` }); console.log('shot', name); };
 
-// 10:30 PM: the crowd is in
+// day 1, then open the doors; 10:30 PM: the crowd is in
 await page.mouse.move(1, 1);
+await step(page, 0, 0.5);
+await shot('m1-day-1');
+await page.evaluate(() => window.__app.screen.order({ t: 'openDoors' }));
 await step(page, Math.round(2.5 * H), 0.5);
 await shot('m0-floor-night');
 
@@ -37,9 +40,10 @@ await page.waitForFunction(() => {
 await step(page, 120, 0.5);
 await shot('m0-whale-sweat');
 
-// run to 6am
+// run past 6am: the floor empties and day 2 begins
+await page.evaluate(() => { const s = window.__app.screen; s.game.s.cage = Math.max(s.game.s.cage, 5000000); });
 await step(page, 10 * H, 0);
-await shot('m0-count-room');
+await shot('m1-day-2');
 
 console.log('errors:', errors.length);
 for (const e of errors) console.log(e);

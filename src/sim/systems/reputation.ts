@@ -5,10 +5,11 @@ import type { GameState } from '../state';
 
 export const WOM = {
   upShare: 500,
-  brokeShare: 900,
+  /** "broke fast": left having lost this share of the bankroll (per mille) within brokeMinutes */
+  brokeShare: 800,
   brokeMinutes: 60,
-  brokePenalty: 300,
-  derivation: 'DESIGN.md §5: +WoM when leaving up 50%; -0.3 WoM when broke inside 60 minutes',
+  brokePenalty: 1000,
+  derivation: 'DESIGN.md §5: +WoM when leaving up 50%; -1.0 WoM when down 80% inside 60 minutes',
 } as const;
 
 export function reputationSystem(g: GameState) {

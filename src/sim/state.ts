@@ -4,6 +4,7 @@ import type { GameDef } from '../data/games';
 import type { GamblerType } from '../data/gamblers';
 import type { FixtureKind } from '../data/floor';
 import type { TableKind } from '../data/tables';
+import type { RivalMove } from '../data/strip';
 import type { Rng } from '../engine/rng';
 import type { Command, LoggedCommand } from './commands';
 import type { GameEvent } from './events';
@@ -84,9 +85,51 @@ export interface Stats {
   net: number;
 }
 
+/** One night in the season's book: what the count room found. */
+export interface NightRecord {
+  night: number;
+  net: number;
+  arrivals: number;
+  /** your share of the strip, per mille */
+  share: number;
+  wom: number;
+  wages: number;
+}
+
+export interface RivalState {
+  id: 'undercutter';
+  /** the edge its games post, and its reputation (per mille points) */
+  edge: number;
+  reputation: number;
+  cash: number;
+  /** its nightly profits, newest last (the buyout price averages the last few) */
+  profits: number[];
+  /** its share of the strip last night, per mille */
+  share: number;
+  /** tonight it runs a free buffet */
+  buffet: boolean;
+  lastMove: RivalMove | null;
+  rng: Rng;
+  bought: boolean;
+}
+
 export interface GameState {
   seed: number;
+  /** ticks since the season began; the night's clock is tick - nightStart */
   tick: number;
+  phase: 'day' | 'night';
+  /** the night being played, or the one the day leads into (1-based) */
+  night: number;
+  nightStart: number;
+  /** tonight's planned arrivals and your share of the strip (per mille) */
+  arrivals: number;
+  share: number;
+  /** reputation, per mille points of word of mouth (DESIGN.md §5, §7) */
+  reputation: number;
+  rival: RivalState;
+  result: 'playing' | 'won' | 'lost';
+  lostReason: string;
+  history: NightRecord[];
   crowdRng: Rng;
   floor: { w: number; h: number; door: [number, number]; fixtures: Fixture[]; version: number };
   tables: TableState[];
@@ -99,7 +142,7 @@ export interface GameState {
   /** a win the cage couldn't cover: the run is over */
   busted: boolean;
   nightOver: boolean;
-  /** tomorrow's word of mouth, per mille (DESIGN.md §5) */
+  /** tonight's word of mouth so far, per mille (DESIGN.md §5); added to reputation at the count */
   wom: number;
   pending: Command[];
   log: LoggedCommand[];
@@ -107,3 +150,6 @@ export interface GameState {
   settle: Settlement[];
   stats: Stats;
 }
+
+/** Ticks since tonight's doors opened. */
+export const nightTick = (g: GameState) => g.tick - g.nightStart;

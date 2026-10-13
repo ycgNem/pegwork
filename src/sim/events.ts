@@ -1,6 +1,7 @@
 // Events out: what happened this tick, for the renderer, the sound and the tests. The sim never
 // reads its own events back except within the tick that raised them (reputation reads `left`).
 import type { GamblerType } from '../data/gamblers';
+import type { RivalMove } from '../data/strip';
 
 export type GameEvent =
   | { t: 'arrived'; agent: number; type: GamblerType }
@@ -13,4 +14,9 @@ export type GameEvent =
   | { t: 'bust'; table: number; agent: number; owed: number; cage: number }
   | { t: 'delivered'; cents: number }
   | { t: 'nightOver' }
+  | { t: 'doorsOpen'; night: number; arrivals: number; share: number }
+  | { t: 'dayBegins'; night: number }
+  | { t: 'rivalMove'; move: RivalMove }
+  | { t: 'boughtOut'; price: number }
+  | { t: 'seasonOver'; result: 'won' | 'lost'; reason: string }
   | { t: 'rejected'; reason: string };

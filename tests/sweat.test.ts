@@ -8,7 +8,7 @@ import { ruinClosedForm, sweat } from '../src/sim/sweat';
 
 /** A floor with gamblers seated at both tables; the first one's bet and bankroll pinned. */
 function seated(seed: number, n: number) {
-  const g = new Game({ seed, noArrivals: true });
+  const g = new Game({ open: true, seed, noArrivals: true });
   for (let i = 0; i < n; i++) g.command({ t: 'spawn', type: i % 3 ? 'tourist' : 'conventioneer' });
   for (let t = 0; t < 20 * TIME.ticksPerMinute; t++) g.tick();
   return g;
@@ -74,7 +74,7 @@ describe('the Sweat', () => {
   });
 
   it('with one small even bet it matches the drifted-walk closed form within 2 points (§11.7)', () => {
-    const g = new Game({ seed: 6, noArrivals: true });
+    const g = new Game({ open: true, seed: 6, noArrivals: true });
     g.command({ t: 'closeTable', table: 0 });
     g.command({ t: 'spawn', type: 'local' });
     for (let t = 0; t < 20 * TIME.ticksPerMinute; t++) g.tick();

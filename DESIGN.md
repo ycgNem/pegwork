@@ -125,13 +125,19 @@ sense the edge, 0–1), a **stop-loss** and a **win goal**.
   Gaussian noise of SD `0.04 × (1 − sharpness)`, nudged each hour toward the edge the gambler has
   actually seen at that table.
 - **Stake:** the base bet, inside the table's limits, never more than the gambler has left.
-- **Leaving:** at the stop-loss (default 100% of bankroll for tourists, 60% for locals), at the
-  win goal (×1.5 to ×3 of bankroll), or when patience runs out.
-- **Word of mouth (pillar 3):** a gambler who leaves **up ≥ 50%** adds `WoM` to tomorrow's
-  reputation ledger; one who leaves broke within 60 minutes subtracts `0.3 × WoM`. Everyone else
-  is neutral. Why asymmetric: losers expect to lose, so a normal loss is quiet; a fast bust feels
-  like a rigged house. With a 16.7% edge a tourist at $4 a bet on Hi-Lo busts in about 2 hours,
-  so very few leave up; at 5% many more do (measured in M1 and written here).
+- **Leaving:** at the stop-loss (80% of the bankroll down for tourists and conventioneers, 60%
+  for locals, all of it for high rollers), at the win goal (×1.5 to ×3 of bankroll), or when
+  patience runs out. *M1:* the tourist's stop-loss came down from 100% because a gambler who
+  plays to zero hands a greedy house their whole bankroll whatever the edge (DESIGN §4's M0
+  measurement), which made greed pay.
+- **Word of mouth (pillar 3):** a gambler who leaves **up ≥ 50%** adds `WoM` to tonight's
+  ledger; one who leaves **down 80% or more within 60 minutes** subtracts `1.0 × WoM`. Everyone
+  else is neutral. At the count, reputation keeps 80% of itself and adds the night's ledger.
+  Why asymmetric: losers expect to lose, so a normal loss is quiet; a fast wipe-out feels like a
+  rigged house and gets told the same way a big win does. *M1:* the penalty was 0.3 × WoM in M0,
+  where word of mouth came out +4.4 a night even at the greedy starter games; at 1.0 a greedy
+  house's reputation falls to about −14 by night 4 and a house at 8% to about −7 (both measured,
+  20 seeds). The long-shot bets make both winners and fast wipe-outs: volatility is the lever.
 
 ## 6. High rollers and the Sweat
 
@@ -163,19 +169,32 @@ sense the edge, 0–1), a **stop-loss** and a **win goal**.
 
 - **Strip population** 600 gamblers a night at night 1, +8% a night (season peak about 1,200).
   Conventions and events add bursts.
-- **Crowd share** by a softmax over houses: `U = reputation + 0.5·marquee + comps value
-  − 6·perceived edge of the house's games + games-match`. You start at about 12% (a sawdust joint
-  against three established houses).
+- **Crowd share** by a softmax over houses: `U = 0.05·reputation − 14·posted edge` (+ the marquee,
+  comps and games-match terms when they exist; + a rival's buffet). The posted edge is the mean,
+  over open tables, of each table's mean bet edge as its paytable reads (a gaff isn't heard). The
+  Showman and the Outfit sit out the slice as one fixed pull, `U = −0.8`. You start at **12.5%**
+  (starter games post 13.2%: U = −1.85; the Undercutter U = 0.2 − 0.63 = −0.43; the rest −0.8).
+  Why 14: a house's take is roughly share × edge while edges are below the point where a crowd's
+  bankrolls run out, and share falls like e^(−14·edge), so the take peaks near an edge of 1/14 ≈
+  7%: greed and generosity both lose to a middle edge. (At 6, the M0 guess, the peak was 17%,
+  and the starter games were already optimal.)
+- **The slice's rival, the Undercutter** (the Silver Dollar): posts 4.5% and cuts toward 3%,
+  reputation 4, $15,000 cash. Its night: crowd = population × its share, each spending $480 per
+  1.0 of edge ($21.60 at 4.5%), minus $5,718 overhead: about **+$1,000** on night 1. Its moves, one
+  a day from a seeded deck: *undercut* (−0.5 points of edge), *billboard* (+2 reputation),
+  *buffet* (+0.4 U for one night).
 - **Rivals (layer 0):** the Undercutter (edges 3–5%, big crowds, thin cage), the Showman (lounge
   acts, high reputation, average edges), the Outfit (sends cheats and poaches staff; its own
   tables are gaffed). Each is a bot with a cash pile, a nightly result from its share, and one
   move per day from a deck of its style.
-- **Buyout price** = `5 × its average nightly profit over the last 3 nights + its building value`,
-  floored at its building value. Starting prices: Undercutter about $15,000, Showman $30,000,
-  Outfit $50,000; the **flagship $120,000** and only after the other three. Why: at the §4
-  hypothesis (+$900 a night rising to about +$3,000 with four good tables) the first buyout lands
-  around night 4, and each buyout's building roughly doubles your earning floor, so the snowball
-  reaches the flagship around night 9–10 for a good run. The M1 pace test measures this.
+- **Buyout price** = `4 × its average nightly profit over the last 3 nights + its building value`,
+  floored at its building value. The Undercutter's building is $7,000, so it opens near **$11,000**
+  and moves with its profits: about $17,500 by day 5 against a greedy house (it keeps the crowd)
+  and $13,300 against one at 8% (measured, 20 seeds). The other rivals and the flagship are
+  priced in M4 from what this one teaches. *M1:* 5 nights and a $10,000 building priced the
+  Undercutter at $18,400 against the 8% house, beyond what four nights earn.
+- **The slice** is 4 nights; the day after night 4 is the last chance to buy. Buying ends the
+  slice won; walking away (or busting) ends it lost.
 
 ## 8. Cheats, gaffs and heat
 
@@ -226,7 +245,9 @@ sense the edge, 0–1), a **stop-loss** and a **win goal**.
 ## 11. Pace tests (20 seeds each; bots play the sim headless)
 
 1. **Greedy starter loses:** a bot that never edits a paytable is never ahead of every rival in
-   crowd share after night 3 and can't afford the first buyout by night 6.
+   crowd share after night 3 and can't afford the first buyout by night 6. *Slice scale (M1):* the
+   greedy bot wins ≤ 20% of 20 seeds and the 8% tuner wins ≥ 35% and at least twice as often.
+   Measured: greedy 3/20, tuner 8/20.
 2. **The Sweat matters:** a bot that keeps tonight's Sweat under 5% busts on ≤ 10% of seeds; a bot
    that accepts every whale and ignores the Sweat busts on ≥ 40%.
 3. **Winners are advertising:** an all-15%-edge bot's crowd share is ≥ 30% below an all-5% bot's by

@@ -40,7 +40,7 @@ function playRound(g: GameState, t: TableState) {
 }
 
 export function tableSystem(g: GameState) {
-  if (g.busted || g.nightOver) return;
+  if (g.phase !== 'night' || g.busted || g.nightOver) return;
   for (const t of g.tables) {
     if (!t.open) continue;
     t.acc += TABLE_KINDS[t.kind].roundsPerHour;

@@ -7,6 +7,9 @@ import type { BetDef } from '../data/games';
 import { C } from '../data/palette';
 import { TABLE_KINDS } from '../data/tables';
 import { clockLabel, NIGHT_TICKS, TIME } from '../data/time';
+import { STRIP } from '../data/strip';
+import { buyoutPrice, population, postedEdge, shares } from '../sim/season';
+import { nightTick } from '../sim/state';
 import type { GameLoop } from '../engine/loop';
 import type { Input } from '../engine/input';
 import { drawFloor, FloorRenderState, outlineRect, tableRect, type FloorView } from '../render/floor';
@@ -84,7 +87,7 @@ export class FloorScreen {
     this.game = new Game({ seed });
   }
 
-  newNight() {
+  newSeason() {
     this.seed++;
     this.game = new Game({ seed: this.seed });
     this.rs = new FloorRenderState();
@@ -157,7 +160,16 @@ export class FloorScreen {
           this.say(e.reason, C.red);
           break;
         case 'nightOver':
-          this.say('6:00 AM. The count room.', C.chalk);
+          this.say('6:00 AM. The doors close; the last of them head out.', C.chalk);
+          break;
+        case 'doorsOpen':
+          this.say(`Night ${e.night}: the doors open. About ${e.arrivals} gamblers tonight (${pct(e.share / 1000, 0)} of the strip).`, C.pink);
+          break;
+        case 'rivalMove':
+          this.say(RIVAL_MOVE_TEXT[e.move], C.sky);
+          break;
+        case 'seasonOver':
+          this.say(e.reason, e.result === 'won' ? C.gold : C.red);
           break;
       }
     }
@@ -206,7 +218,8 @@ export class FloorScreen {
     this.topBar(ui);
     this.tablePanel(ui, g.tables[this.selected]);
     this.cagePanel(ui);
-    if (g.busted || g.nightOver) this.countRoom(ui);
+    if (g.result !== 'playing') this.resultPanel(ui);
+    else if (g.phase === 'day') this.dayPanel(ui);
   }
 
   private topBar(ui: UI) {
@@ -214,8 +227,8 @@ export class FloorScreen {
     ui.fill(0, 0, SCREEN_W, TOP, C.ink);
     ui.fill(0, TOP - 1, SCREEN_W, 1, C.plum);
     ui.text('CARPET JOINT', 6, 4, C.pink);
-    ui.text('debug floor, night 1', 76, 4, C.slate);
-    ui.text(clockLabel(Math.min(g.tick, NIGHT_TICKS)), 232, 4, C.chalk, { align: 'center' });
+    ui.text(g.phase === 'day' ? `Day ${g.night}` : `Night ${g.night} of ${STRIP.sliceNights}`, 76, 4, C.steel);
+    ui.text(g.phase === 'day' ? 'daytime' : clockLabel(Math.min(nightTick(g), NIGHT_TICKS)), 232, 4, C.chalk, { align: 'center' });
     if (loop) {
       const bx = 262;
       if (ui.button('pause', bx, 2, 26, 12, loop.paused ? 'Go' : 'II', { active: loop.paused, tip: 'Pause the floor (Space). Every order works while paused.' })) loop.paused = !loop.paused;
@@ -309,17 +322,81 @@ export class FloorScreen {
     ui.text(`Left up 50%: ${g.stats.leftUp}   broke fast: ${g.stats.leftBroke}`, x + 6, y, C.steel);
   }
 
-  private countRoom(ui: UI) {
+  /** The day: last night's count, tonight's strip, the rival, the cash, the buyout, the doors. */
+  private dayPanel(ui: UI) {
     const g = this.game.s;
-    const w = 220, h = 92, x = Math.floor((PANEL_X - w) / 2), y = 120;
+    const w = 300, h = 214, x = Math.floor((PANEL_X - w) / 2), y = 70;
     ui.panel(x, y, w, h, 'dark');
-    ui.text(g.busted ? 'THE CAGE RAN DRY' : '6:00 AM: THE COUNT ROOM', x + w / 2, y + 8, g.busted ? C.red : C.gold, { align: 'center' });
-    if (g.busted && this.bust) ui.text(`A ${money(this.bust.owed)} win; the cage held ${money(this.bust.cage)}.`, x + 10, y + 26, C.red);
-    else ui.text(`House net ${money(g.stats.net, true)} on ${money(g.stats.handle)} bet`, x + 10, y + 26, g.stats.net >= 0 ? C.leaf : C.red);
-    ui.text(`${g.stats.arrived} gamblers, ${g.stats.rounds} rounds`, x + 10, y + 38, C.chalk);
-    ui.text(`${g.stats.leftUp} left up 50%+, ${g.stats.leftBroke} went broke fast`, x + 10, y + 50, C.chalk);
-    if (ui.button('again', x + w / 2 - 40, y + h - 20, 80, 13, 'Next night')) this.newNight();
+    const last = g.history[g.history.length - 1];
+    const lastDay = g.night > STRIP.sliceNights;
+    ui.text(lastDay ? 'THE LAST DAY' : g.night === 1 ? 'DAY 1: BEFORE THE DOORS OPEN' : `DAY ${g.night}: THE MORNING AFTER`, x + w / 2, y + 7, C.gold, { align: 'center' });
+    let yy = y + 22;
+    if (last) {
+      ui.text(`Last night ${money(last.net, true)}, ${last.arrivals} gamblers, wages ${money(last.wages)}`, x + 10, yy, last.net >= 0 ? C.leaf : C.red);
+      yy += 10;
+      ui.text(`Word of mouth ${last.wom >= 0 ? '+' : ''}${(last.wom / 1000).toFixed(1)}; reputation now ${(g.reputation / 1000).toFixed(1)}`, x + 10, yy, last.wom >= 0 ? C.sky : C.red);
+      yy += 14;
+    }
+    const sh = shares(g);
+    const edge = postedEdge(g);
+    ui.text(lastDay ? 'The strip, if you opened again' : 'The strip tonight', x + 10, yy, C.steel);
+    yy += 10;
+    ui.text(`You: ${pct(sh.you, 0)}, about ${Math.round(population(g.night) * sh.you)} gamblers. Your games post ${pct(edge)}.`, x + 10, yy, C.chalk);
+    yy += 10;
+    const r = g.rival;
+    ui.text(`The Silver Dollar: ${pct(sh.rival, 0)}, posting ${pct(r.edge)}${r.buffet ? ', free buffet tonight' : ''}.`, x + 10, yy, C.chalk);
+    if (ui.hover(x + 4, yy - 12, w - 8, 22))
+      ui.tip([
+        { text: 'The strip splits by reputation and posted edge.', color: C.gold },
+        { text: 'Every point of edge you post costs you crowd; every gambler who leaves up 50% brings more, every one wiped out inside an hour costs one.' },
+      ], 170);
+    yy += 14;
+    const price = buyoutPrice(g);
+    ui.text(`Buy the Silver Dollar: ${money(price)}`, x + 10, yy, C.gold);
+    ui.text(`(4 nights of its profit + its building)`, x + 10, yy + 10, C.slate);
+    if (ui.button('buy', x + w - 96, yy - 2, 86, 13, 'Buy it out', { disabled: g.bank < price, tip: g.bank < price ? `The bank holds ${money(g.bank)}. Move cash from the cage first.` : 'Pays from the bank. The strip is yours: the slice is won.' })) this.order({ t: 'buyout' });
+    yy += 26;
+    ui.text(`Cage ${money(g.cage)}   Bank ${money(g.bank)}`, x + 10, yy, C.chalk);
+    if (ui.button('tocage', x + w - 166, yy - 2, 76, 12, '+$500 cage', { tip: 'Move $500 from the bank to the cage.' })) this.order({ t: 'transferCash', cents: 50000 });
+    if (ui.button('tobank', x + w - 86, yy - 2, 76, 12, '+$500 bank', { tip: 'Move $500 from the cage to the bank.' })) this.order({ t: 'transferCash', cents: -50000 });
+    yy += 18;
+    ui.text('Edit paytables and limits on the right before you open.', x + 10, yy, C.slate);
+    const bx = x + w / 2 - 60, by = y + h - 22;
+    if (lastDay) {
+      if (ui.button('walk', bx, by, 120, 15, 'Walk away', { tip: 'End the season without buying the Silver Dollar.' })) this.order({ t: 'closeSeason' });
+    } else if (ui.button('open', bx, by, 120, 15, `Open the doors`, { tip: `Night ${g.night} begins at 8pm.` })) {
+      this.order({ t: 'openDoors' });
+      if (this.loop) this.loop.paused = false;
+    }
+  }
+
+  private resultPanel(ui: UI) {
+    const g = this.game.s;
+    const w = 280, h = 120, x = Math.floor((PANEL_X - w) / 2), y = 100;
+    ui.panel(x, y, w, h, 'dark');
+    const won = g.result === 'won';
+    ui.text(won ? 'THE STRIP IS YOURS' : g.busted ? 'THE CAGE RAN DRY' : 'THE SEASON IS OVER', x + w / 2, y + 8, won ? C.gold : C.red, { align: 'center' });
+    let yy = y + 26;
+    if (g.busted && this.bust) {
+      ui.text(`A ${money(this.bust.owed)} win; the cage held ${money(this.bust.cage)}.`, x + 10, yy, C.red);
+      yy += 12;
+    } else {
+      ui.text(won ? 'You bought out the Silver Dollar.' : g.lostReason, x + 10, yy, won ? C.leaf : C.red);
+      yy += 12;
+    }
+    const total = g.history.reduce((n, h2) => n + h2.net, 0);
+    ui.text(`${g.history.length} nights, house net ${money(total, true)}`, x + 10, yy, C.chalk);
+    yy += 10;
+    ui.text(`Cage ${money(g.cage)}, bank ${money(g.bank)}, reputation ${(g.reputation / 1000).toFixed(1)}`, x + 10, yy, C.chalk);
+    if (ui.button('again', x + w / 2 - 50, y + h - 22, 100, 14, 'New season')) this.newSeason();
   }
 }
+
+/** What the ticker says when the rival makes its move. */
+const RIVAL_MOVE_TEXT: Record<string, string> = {
+  undercut: "Lou Tolliver cuts the Silver Dollar's edges again.",
+  billboard: 'A new billboard for the Silver Dollar goes up on the highway.',
+  buffet: 'The Silver Dollar runs a free buffet tonight.',
+};
 
 export const PANEL = { x: PANEL_X, w: PANEL_W, top: TOP, ticksPerHour: TIME.ticksPerHour };

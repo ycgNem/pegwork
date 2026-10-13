@@ -4,12 +4,12 @@ import { CROWD, GAMBLER_TYPES, type GamblerType } from '../../data/gamblers';
 import { CHOICE } from '../../data/gamblers';
 import { TIME } from '../../data/time';
 import { center } from '../floor';
-import type { Gambler, GameState } from '../state';
+import { nightTick, type Gambler, type GameState } from '../state';
 
 const ARRIVAL_TYPES = (Object.keys(GAMBLER_TYPES) as GamblerType[]).filter((t) => GAMBLER_TYPES[t].arrivalWeight > 0);
 
-/** chance per tick that someone walks in: 600 x 12% = 72 a night, over 8 hours */
-export const ARRIVAL_CHANCE = (CROWD.stripPopulation * CROWD.startShare) / 1000 / (CROWD.arrivalHours * TIME.ticksPerHour);
+/** chance per tick that someone walks in: tonight's planned arrivals spread over the first 8 hours */
+export const arrivalChance = (planned: number) => planned / (CROWD.arrivalHours * TIME.ticksPerHour);
 
 export function spawnGambler(g: GameState, type: GamblerType): Gambler {
   const def = GAMBLER_TYPES[type], r = g.crowdRng;
@@ -36,8 +36,8 @@ export function spawnGambler(g: GameState, type: GamblerType): Gambler {
 }
 
 export function arrivalSystem(g: GameState) {
-  if (g.nightOver || g.busted || g.tick >= CROWD.arrivalHours * TIME.ticksPerHour) return;
-  if (!g.crowdRng.chance(ARRIVAL_CHANCE)) return;
+  if (g.phase !== 'night' || g.nightOver || g.busted || nightTick(g) >= CROWD.arrivalHours * TIME.ticksPerHour) return;
+  if (!g.crowdRng.chance(arrivalChance(g.arrivals))) return;
   const type = g.crowdRng.weighted(ARRIVAL_TYPES, (t) => GAMBLER_TYPES[t].arrivalWeight);
   spawnGambler(g, type);
 }
