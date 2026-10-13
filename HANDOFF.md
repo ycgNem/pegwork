@@ -9,18 +9,11 @@ is built: the 640x360 screen, the exact odds calculator, the floor sim with gamb
 walk, bet and leave, the cage and busting, the Sweat, the debug floor, the art-direction test
 sprites, the four agents, 38 tests, the e2e scripts.
 
-- **Committed locally, not pushed.** Pushing to `main` deploys to
-  https://ycgnem.github.io/pegwork/ (still the marble board until then). Push only when the owner
-  says so.
-- **Next: Milestone 1, the slice** (ROADMAP.md), only when the owner says so. START-HERE.md's
-  Prompt 1 is to be written from what M0 measured.
+- **Pushed** to `main`: https://ycgnem.github.io/pegwork/ shows the debug floor.
+- **Now: Milestone 1, the slice** (ROADMAP.md), approved by the owner (DECISIONS #38).
 
-**Open with the owner:**
-1. The tourist's proportions: **chibi or slim** (`art/people/preview_tourist_*.png`,
-   `art/preview_context.png`; `VARIANT` in `art/people/build_tourist.py`). Chibi is packed.
-2. Endesga 32 kept after the neon test: confirm, or ask for another palette.
-3. Push M0 to the live page?
-4. Still unanswered from the re-plan: anything in PLAN.md to cut.
+**Settled with the owner:** chibi proportions, Endesga 32 (#38). Still unanswered from the
+re-plan: anything in PLAN.md to cut.
 
 **M1 must fix first** (DESIGN §4, DECISIONS #36): a starter night earns +$3,004, not +$900, and the
 greedy starter games don't cost the crowd yet. Rebalance tourist stop-losses, the word-of-mouth

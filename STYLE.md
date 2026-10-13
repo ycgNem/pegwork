@@ -34,7 +34,7 @@ sprites.
 
 ## Palette
 
-**Endesga 32, kept after the M0 test** (the art director's call, pending the owner's review: it
+**Endesga 32, kept after the M0 test** (confirmed by the owner, DECISIONS #38: it
 carries the neon pinks, cyan and gold plus warm wood, crimson leather and felt ramps; the M0 test
 used 4–15 colors a sprite and never wanted one it lacked). The game palette file is
 `src/data/palette.ts`; the pipeline locks every sprite to it (the saved palette keeps its old name,
@@ -63,7 +63,7 @@ used 4–15 colors a sprite and never wanted one it lacked). The game palette fi
 - **People are 12 × 20 and chunky**, with a silhouette break per type: the tourist's wide straw sun
   hat. Two proportion variants were drawn for the owner: **chibi** (head and hat ~45% of the
   height, the default) and **slim** (head ~30%, longer legs, more of a 70s fashion line).
-  `VARIANT` in `art/people/build_tourist.py` picks the one the game packs. The owner chooses.
+  **The owner chose chibi** (DECISIONS #38); every person is drawn in it.
 - **Light is a low lamp above each table, a little upper-left.** Masses take their light shade on
   the left column and their shadow on the right; felt gets one lighter oval (cel, no dither).
 - **Tables are 3/4 top-down**: the top surface fills most of the footprint and the last 5 rows
