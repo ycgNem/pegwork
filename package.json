@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "type": "module",
   "description": "A pixel-art gambling roguelike where you build the marble machine you gamble on.",
-  "author": "jacksonwalley",
+  "author": "ycgNem",
   "main": "electron/main.cjs",
   "scripts": {
     "dev": "vite",
@@ -31,7 +31,7 @@
     "jsfxr": "^1.4.1"
   },
   "build": {
-    "appId": "com.jacksonwalley.pegwork",
+    "appId": "com.ycgnem.pegwork",
     "productName": "Pegwork",
     "directories": { "output": "release", "buildResources": "build" },
     "files": ["dist/**/*", "electron/**/*", "package.json"],

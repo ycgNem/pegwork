@@ -1,14 +1,37 @@
 # Handoff — Pegwork
 
-Read this first, every session.
+Read this first, every session. A new session needs nothing but this file and the docs CLAUDE.md
+lists; the conversation that built Milestone 0 is not needed.
 
 ## Where things stand (2026-10-12)
 
-**Milestone 0 is done** (see PROGRESS.md): the engine layer, the 384x216 whole-number scaler, the
-deterministic circle physics, the sim with its command log and replay, the base board tuned to
-DESIGN §2's EV targets, the Dry Run, the debug screen, the Steel marble and Peg sprites through
-pixel-art-studio, the four agents, the tests and the e2e scripts. **Next: Milestone 1** (START-HERE
-Prompt 1), only when the owner says so.
+**Milestone 0 is done and published** (see PROGRESS.md): the engine layer, the 384x216
+whole-number scaler, the deterministic circle physics, the sim with its command log and replay,
+the base board tuned to DESIGN §2's EV targets, the Dry Run, the debug screen, the Steel marble and
+Peg sprites through pixel-art-studio, the four agents, the tests and the e2e scripts.
+
+- **Play it:** https://ycgnem.github.io/pegwork/
+- **Repo:** https://github.com/ycgNem/pegwork (public), branch `main`.
+- **Next: Milestone 1** (START-HERE.md Prompt 1), only when the owner says so.
+
+**Open questions for the owner** (raised at the end of M0, not yet answered):
+1. Should the Dry Run run more than 300 drops a column? At 300 a column's EV is ±0.06, and on the
+   base board column 11 reads 1.04 though its true EV is 0.91. 3,000 drops cost about 25 ms a
+   column in the browser. (The readout now only turns green when the EV clears 1.0 by two
+   standard errors.)
+2. The base board's best column loses about $9 a duel at a $10 stake, not the $15 DESIGN §5
+   assumed; §8.2 (never-builds bot broke by town 2) may need the numbers revisited in M1.
+3. START-HERE asked to check the name on itch.io, Steam and the domain before the first public
+   build. The GitHub Pages build is public now; the name is still "Pegwork".
+
+## Publishing and identity
+
+- Every push to `main` runs `.github/workflows/deploy.yml`: `npm ci`, `npm test`, `npm run
+  build`, then deploys `dist/` to GitHub Pages (Pages source: GitHub Actions). A failing test
+  blocks the deploy. Check a run with `gh run list -R ycgNem/pegwork` and `gh run watch`.
+- Commits are authored as **ycgNem <337835027+ycgNem@users.noreply.github.com>** (set in this
+  repo's `.git/config`), never the owner's real name or email. `gh` is logged in as ycgNem.
+- Commit or push only when the owner asks. The repo is public: no tokens in it.
 
 ## Running it
 
@@ -51,6 +74,4 @@ Prompt 1), only when the owner says so.
 - Empty systems (`duel`, `wear`, `rival`, `skills`) hold their place in the order for M1.
 - `e2e/coverage.mjs` (STYLE.md) doesn't exist yet; until M3 the data test checks that every
   sprite name the data uses is defined.
-- The repo is local only (`git init` done, one commit); create the GitHub repo when the owner
-  asks. The deploy workflow is inert until then.
 - The other game folders in Documents are read-only for this project.

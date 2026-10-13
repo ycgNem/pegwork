@@ -2,6 +2,11 @@
 
 What is built. Newest first.
 
+## 2026-10-12 — Published
+
+- GitHub repo https://github.com/ycgNem/pegwork (public); GitHub Pages deploys `main` on every
+  push after the tests pass: https://ycgnem.github.io/pegwork/ (the M0 debug board).
+
 ## 2026-10-12 — Milestone 0: foundation and the physics
 
 **The engine layer** (from Sprocket & Sprout, every S&S name and asset stripped; DECISIONS #8):
