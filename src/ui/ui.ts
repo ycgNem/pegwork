@@ -1,4 +1,4 @@
-// Immediate-mode UI kit drawn on the 384x216 logical canvas with the bitmap font. Everything is in
+// Immediate-mode UI kit drawn on the 640x360 logical canvas with the bitmap font. Everything is in
 // logical pixels; the app maps the mouse into them before begin().
 import { C, PALETTE, rgba } from '../data/palette';
 import type { Input } from '../engine/input';

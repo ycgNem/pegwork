@@ -1,9 +1,9 @@
-// The 384x216 logical screen and the whole-number scaler (DESIGN.md §1, STYLE.md).
-// Everything draws into a 384x216 buffer; each frame the buffer is copied to the display canvas
+// The 640x360 logical screen and the whole-number scaler (DESIGN.md §1, STYLE.md, DECISIONS #21).
+// Everything draws into a 640x360 buffer; each frame the buffer is copied to the display canvas
 // at the largest whole-number scale that fits the window, letterboxed, with smoothing off.
 
-export const SCREEN_W = 384;
-export const SCREEN_H = 216;
+export const SCREEN_W = 640;
+export const SCREEN_H = 360;
 
 /** The largest whole-number scale at which a w x h screen fits a window of device pixels. */
 export function fitScale(winW: number, winH: number): number {

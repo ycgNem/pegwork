@@ -2,6 +2,66 @@
 
 What is built. Newest first.
 
+## 2026-10-12 — Milestone 0: wipe and foundation
+
+**The wipe** (its own commit, d18e8f7): the marble board's physics, Dry Run, data, renderer, debug
+screen, art, scripts and tests are gone; the engine tooling stayed (DECISIONS #29).
+
+**The screen**: 640x360 logical, whole-number scaling (x3 = 1080p), letterboxed. Input actions:
+Space pause, 1 / 2 speed, Esc menu, M mute. Settings key `carpetjoint:settings`. Every Pegwork
+name in the app, the .bat files, Electron (1920x1080 window) and package.json is now Carpet Joint.
+
+**Data** (`src/data/`, every number with a derivation): `time.ts` (27 s game hours, 8pm-6am),
+`games.ts` (randomizers, bet types in tenths, the starter Hi-Lo Dice, Red Wheel and Lucky Drum),
+`tables.ts` (dice, wheel, drum: seats, pace, footprint, seat tiles, limits), `gamblers.ts` (four
+types, the choice formula, tonight's crowd), `economy.ts` (bank, cage, armored car, the Sweat's
+and the edge's color rules), `floor.ts` (the 16x11 sawdust joint).
+
+**The odds** (`src/sim/odds/`): exact BigInt rationals; dice and wheels enumerated with whole-number
+weights (gaffs are weights), the drum by hypergeometric odds; edge, volatility, hit rate, top
+payout; apparent (fair) vs true odds for gaffed games. One `sample` + `ret` path shared by the
+tables, the Sweat and the editor.
+
+**The sim** (`src/sim/`): `Game.ts` with the 14 systems in CLAUDE.md's order (cheats, staff, heat,
+rivals, events and progression are empty until M1), per-table RNG streams, the command log, a
+state hash, `replay`, `applyNow` for orders while paused (#34). Gamblers arrive, score every open
+table's best bet by the choice formula, pick by seeded softmax, walk the flow field to their seat,
+bet every round, leave at stop-loss, win goal or patience, and walk out; word of mouth on the way.
+Bets settle against the cage in seat order; a win the cage can't pay busts the house (#30). The
+armored car moves money in an hour. At 6am the night ends.
+
+**The Sweat** (`src/sim/sweat.ts`): 500 replays of the rest of tonight with the live bet path,
+tabulated per outcome (#32), ± its error, the biggest win on the floor; the closed form with
+Siegmund's correction as a test. 19 ms worst in Chrome with 12 seated (budget 50).
+
+**The debug floor** (`src/app/floorScreen.ts`, `src/render/floor.ts`): the street, the walls, the
+floor, y-sorted tables, fixtures and gamblers (interpolated), live dice faces, a spinning wheel with
+the ball on the winning pocket, the neon sign, win floaters (small wins summed per table), the
+ticker. Right panel: the selected table's bets with pays -/+ and exact edge (color rule), hit
+rate and a tooltip with the exact fraction and the swing; limits; open/close; send in a whale. The
+cage panel: cage, bank, the Sweat with its bar, the biggest win on the floor, the armored car.
+A table flashes red when one max bet on its top payout would beat the cage. The count room at 6am,
+and a bust screen.
+
+**Art** (pixel-art-studio, two critique passes each; DECISIONS #37, STYLE.md): the tourist (12x20,
+4 directions x 4 walk frames + seated, in chibi and slim variants; chibi packed), the dice table
+(48x32), neon letters C A R P E T J O I N with flicker frames. `art/build_all.py` packs
+`src/art/people|tables|neon`; `art/preview_context.py` shows them on the floor at 1x and x4.
+Everything else is a code-drawn placeholder at its final name (`src/render/placeholders.ts`).
+
+**Measured** (DESIGN §4): a starter night +$3,004 ± $270 over 20 seeds, 14.2% hold, no busts, word
+of mouth +4.4: the greedy starter games aren't punished yet; M1 rebalances (#36).
+
+**Tests** (`npm test`, 38): odds (the starter table exactly, simulation within 4 SE, gaffs),
+determinism (system order, a full night's hashes, replay bit-identical, money conserved, everyone
+gone by 6am), sessions (5 seeds: arrive, sit, play, leave, cage moves by their loss; can't afford;
+bust), the Sweat (perf, determinism, whale, fast path = exact path, 500 vs 5,000, closed form),
+data (derivations, DESIGN's table matches the real edges, seats valid and reachable, sprites
+exist). **e2e**: `npm run shots` (floor, editor tooltip, whale with the Sweat at 28%, count room),
+`npm run screens` (9 states, 0 overlap issues), `npm run perf`.
+
+**Agents** rewritten for Carpet Joint: indie-critic, art-director, qa-screens, balance-auditor.
+
 ## 2026-10-12 — Re-planned as Carpet Joint
 
 - With the owner: the marble board is dropped; the game is now a casino tycoon roguelike on a
@@ -86,7 +146,7 @@ histogram, the results; the overlap sweep (6 states); perf.
 
 | Milestone | Status |
 |---|---|
-| M0 — Wipe and foundation | not started (waiting for the owner's roadmap review) |
+| M0 — Wipe and foundation | done (2026-10-12) |
 | M1 — The slice (nights 1–4, one rival) | not started |
 | M2 — The gate | not started |
 | M3 — The art pass | waiting for the gate |

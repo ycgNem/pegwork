@@ -1,6 +1,6 @@
 // Sprite sheets made by the pixel-art-studio build scripts (art/<family>/build_*.py, STYLE.md):
 // every src/art/<family>.png with its <family>.json. The JSON is Aseprite-compatible; each frame's
-// filename is the game's sprite name (e.g. `marble:steel:0`) and its pivot is the sprite's anchor.
+// filename is the game's sprite name (e.g. `gambler:tourist:d:0`) and its pivot is the sprite's anchor.
 import { artReady, defImageSprite } from './atlas';
 
 export interface SheetFrame {

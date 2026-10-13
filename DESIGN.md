@@ -17,6 +17,8 @@ new derivation here first. Money is in whole cents everywhere in the sim.
   bought-out rival adds its own building as a connected wing. The camera pans; the floor view is
   at most 28×18 tiles (448×288 px) of the screen, the rest is the top bar (16 px) and the right
   panel (176 px).
+- **Arrivals:** tonight's crowd (§7) walks in at an even seeded rate over the first 8 game hours
+  (8pm–4am); the M1 crowd model gives the evening its peak.
 - **Agents** (gamblers, staff) move on the tile grid with positions in integer 1/16 px, walking
   **2 tiles per game minute** (a gambler crosses the joint in about 8 game minutes = 3.6 s real),
   pathing on a flow field per destination rebuilt only when the floor changes.
@@ -53,6 +55,17 @@ word-of-mouth penalty (§5) pile up.
 | Hi-Lo Dice | 2d6 | Doubles | 4:1 | 6/36 | 16.7% | 1.86 |
 | Red Wheel | 24 pockets: 11 red, 11 black, 2 house | Red or Black | 1:1 | 11/24 | 8.3% | 1.00 |
 | Red Wheel | same | One pocket | 20:1 | 1/24 | 12.5% | 4.20 |
+| Lucky Drum | 40 balls, 10 drawn | Pick 1 (catch it) | 2.5:1 | 1/4 | 12.5% | 1.52 |
+| Lucky Drum | same | Pick 3 (2 hits / 3 hits) | 2:1 / 40:1 | 0.137 / 0.0121 | 9.2% | 4.56 |
+
+The wheel's house pockets sit opposite each other (0 and 12) and the colors alternate around the
+whole wheel. The drum's odds are hypergeometric (every set of picks has the same odds, so a catch
+bet's numbers are fixed). The Lucky Drum isn't on the sawdust joint's floor at the start; it's the
+third layer-0 table to buy (§3).
+
+**Bets on one table share its outcome.** Six tourists on the same wheel pocket win together, so
+a table's swing is the sum of its bets moving as one, not six independent bets. The Sweat (§6)
+simulates rounds, not bets, for exactly this reason.
 
 Why greedy: the first lesson is that your starter games drive the crowd away (§5 word of mouth),
 and editing a paytable fixes it. Pace test §11.1 encodes it.
@@ -80,6 +93,13 @@ and editing a paytable fixes it. Pace test §11.1 encodes it.
   $300–700 depending on the bet mix (simulated in M1; this is the hypothesis). Against a $2,000
   cage that's a risk of ruin near zero, so the first night is safe. The first whale (night 2,
   §6) is not: one $500 bet on a single wheel pocket pays $10,500.
+- *Measured in M0* (20 seeds, the debug floor's night 1: starter games, $2–$50 limits, about 70
+  arrivals, no whales): house net **+$3,004 ± $270** a night (SD $1,208, range +$714 to +$4,765),
+  a 14.2% hold on everything bet, no busts. That's over three times the hypothesis: a tourist's
+  stop-loss is their whole bankroll, so at a 16.7% table the house keeps most of it in one night.
+  Word of mouth came out **+4.4** a night (6.2 left up 50%, 7.1 went broke fast), so the greedy
+  starter games don't yet cost the crowd they should (§11.1). M1 rebalances: stop-losses below
+  100% for tourists, the word-of-mouth penalty, and the buyout prices in §7, which assumed $900.
 
 ## 5. Gamblers
 
@@ -97,10 +117,14 @@ sense the edge, 0–1), a **stop-loss** and a **win goal**.
 | Inspector | $200 | $5 | 120 min | — | 1.0 for gaffs | appears with heat (§8) |
 
 - **Choosing a table** (each time a gambler is free): `score = 1.0·H + 0.6·thrill·log2(top
-  payout) + 0.4·buzz − 8·sharpness·perceivedEdge − 0.05·walk tiles`, picked by a seeded softmax.
+  payout) + 0.4·buzz − 8·sharpness·perceivedEdge − 0.05·walk tiles`, picked by a seeded softmax
+  at temperature 0.25 (a 0.25 better score is e times as likely). Each table is scored by the
+  gambler's best bet there, and that's the bet they play. `top payout` here is `1 + pays`.
+  Gamblers judge the paytable as it looks: a gaff's true odds never enter this formula.
   `buzz` = seats filled plus recent visible wins nearby. `perceivedEdge` = true edge plus
   Gaussian noise of SD `0.04 × (1 − sharpness)`, nudged each hour toward the edge the gambler has
   actually seen at that table.
+- **Stake:** the base bet, inside the table's limits, never more than the gambler has left.
 - **Leaving:** at the stop-loss (default 100% of bankroll for tourists, 60% for locals), at the
   win goal (×1.5 to ×3 of bankroll), or when patience runs out.
 - **Word of mouth (pillar 3):** a gambler who leaves **up ≥ 50%** adds `WoM` to tomorrow's
@@ -122,6 +146,15 @@ sense the edge, 0–1), a **stop-loss** and a **win goal**.
   `P(ruin by T) ≈ Φ((−C − μT)/(σ√T)) + e^(−2μC/σ²) · Φ((−C + μT)/(σ√T))`,
   with C the cage, μ and σ² the per-hour mean and variance of the house's net. (The closed form
   is wrong for big jumpy whale bets, which is why the Sweat simulates instead.)
+- **How money moves:** every bet settles against the cage the moment its round resolves: a loss
+  adds the stake, a win pays the gain. A win bigger than the cage busts the house. (Equivalent to
+  buy-ins and cash-outs at the cage, but it puts the bust exactly where the swing is.)
+- **Milestone 0's Sweat** holds tonight's seated crowd fixed: everyone seated now keeps their bet
+  until 6am. The forecast of arrivals and departures comes with M1. The fast path tabulates each
+  table's round per outcome (the cage change and the least cage that survives the seat order);
+  a test proves it equals settling bet by bet.
+- **The closed-form check** uses Siegmund's correction (the barrier moved out by 0.583 of one
+  bet's SD), because a walk of whole bets overshoots zero instead of touching it.
 - **The hard rule:** if any table's `maximum bet × (top payout + 1)` exceeds the cage, the table
   flashes red. One spin can bust you.
 - **The armored car** moves money bank → cage in 1 game hour and costs $50.

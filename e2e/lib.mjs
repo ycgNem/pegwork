@@ -1,11 +1,11 @@
 // Shared e2e setup: a headless browser on the dev server (BASE, default http://localhost:5183/),
-// console errors collected, and helpers to drive the debug screen deterministically.
+// console errors collected, and helpers to drive the debug floor deterministically.
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 
 export const BASE = process.env.BASE ?? 'http://localhost:5183/';
-/** 384x216 at x4 */
-export const VIEW = { width: 1536, height: 864 };
+/** 640x360 at x3 */
+export const VIEW = { width: 1920, height: 1080 };
 
 export async function open() {
   const browser = await chromium.launch({ channel: process.env.PW_CHANNEL ?? 'chrome', headless: true, args: ['--autoplay-policy=no-user-gesture-required'] });
@@ -14,7 +14,7 @@ export async function open() {
   page.on('console', (m) => { if (m.type() === 'error' || m.type() === 'warning') errors.push(`[${m.type()}] ${m.text()}`); });
   page.on('pageerror', (e) => errors.push(`[pageerror] ${e.message}`));
   await page.goto(BASE);
-  await page.waitForFunction(() => window.__app?.screen?.dryReady, null, { timeout: 20000 });
+  await page.waitForFunction(() => window.__app?.screen?.ready, null, { timeout: 20000 });
   // freeze the loop: the tests step the sim themselves so every shot is the same frame
   await page.evaluate(() => { window.__app.loop.paused = true; });
   return { browser, page, errors };
@@ -26,11 +26,11 @@ export function outDir(sub = '') {
   return d;
 }
 
-/** Logical (384x216) point -> page point. */
+/** Logical (640x360) point -> page point. */
 export async function toPage(page, x, y) {
   return page.evaluate(([x, y]) => {
     const c = document.getElementById('game').getBoundingClientRect();
-    const k = c.width / 384;
+    const k = c.width / 640;
     return [c.left + (x + 0.5) * k, c.top + (y + 0.5) * k];
   }, [x, y]);
 }

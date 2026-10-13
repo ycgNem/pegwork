@@ -1,5 +1,5 @@
 // The music notation: a song is written as text and turned into timed note events;
-// src/engine/audio/music.ts synthesizes them, so there are no sound files. Pegwork has no songs
+// src/engine/audio/music.ts synthesizes them, so there are no sound files. Carpet Joint has no songs
 // yet (Milestone 7 is sound); DEFS is where they go.
 //
 // Notation, one bar per `|`:
@@ -88,7 +88,7 @@ const MORNING_DRUMS: PartDef[] = [
 
 /** 1: bright and bouncy, a music box over tick-tock clockwork (F major, 100 bpm) */
 
-/** Pegwork songs go here (Milestone 7). */
+/** Carpet Joint's songs go here (Milestone 7). */
 const DEFS: SongDef[] = [];
 
 // ---------------- reading the notation ----------------

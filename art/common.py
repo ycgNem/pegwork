@@ -1,4 +1,4 @@
-"""Shared setup for every Pegwork build script (STYLE.md: the art pipeline).
+"""Shared setup for every Carpet Joint build script (STYLE.md: the art pipeline).
 
 - puts pixel-art-studio's scripts/ on sys.path (a vendored .claude/skills copy first, else the
   user-level install) and re-exports Sprite;
@@ -33,23 +33,20 @@ E = dict(zip(_NAMES, GAME_HEX))
 
 # Material ramps, shadow -> light (STYLE.md "Palette"). Shadows lean cool or red, lights lean warm.
 RAMPS = {
-    "wood": ["umber", "walnut", "clay", "tan", "sand"],
+    "skin": ["clay", "tan", "peach"],
+    "skinDark": ["walnut", "clay", "tan"],
+    "felt": ["feltDark", "felt", "moss"],
+    "wood": ["umber", "walnut", "clay", "tan"],
+    "rail": ["plum", "crimson", "red"],          # the padded leather arm rail
     "brass": ["walnut", "copper", "brass", "gold"],
-    "tin": ["navy", "slate", "steelDark", "steel", "steelLight"],
-    "felt": ["ink", "feltDark", "felt", "moss"],
-    "chalk": ["steel", "chalk", "white"],
-    "glass": ["blue", "sky", "cyan", "white"],
-    "steel": ["navy", "steelDark", "steel", "steelLight", "white"],
-    "lead": ["ink", "navy", "slate", "steelDark"],
-    "ember": ["crimson", "red", "ember", "brass", "gold"],
+    "pinkShirt": ["plum", "magenta", "pink"],
+    "khaki": ["clay", "tan", "sand"],
+    "straw": ["tan", "sand", "chalk"],
+    "neonPink": ["plum", "magenta", "pink", "white"],   # halo out -> core in
+    "neonCyan": ["navy", "blue", "cyan", "white"],
+    "neonGold": ["walnut", "ember", "gold", "white"],
 }
 OUTLINE = E["ink"]
-
-
-def disc6(s, x0, y0, color):
-    """The 6 px disc (r = 3) whose top-left pixel box is (x0, y0): every marble and peg's footprint."""
-    s.rect(x0 + 1, y0, x0 + 4, y0 + 5, color)
-    s.rect(x0, y0 + 1, x0 + 5, y0 + 4, color)
 
 
 def pack(family, entries, padding=1):
@@ -68,7 +65,7 @@ def pack(family, entries, padding=1):
     out = ROOT / "src/art"
     out.mkdir(parents=True, exist_ok=True)
     sheet.save(out / f"{family}.png")
-    meta = {"frames": frames, "meta": {"app": "pixelstudio (Pegwork art/common.py)", "image": f"{family}.png",
+    meta = {"frames": frames, "meta": {"app": "pixelstudio (Carpet Joint art/common.py)", "image": f"{family}.png",
                                         "format": "RGBA8888", "size": {"w": W, "h": H}, "scale": "1"}}
     (out / f"{family}.json").write_text(json.dumps(meta, indent=1))
     used = {sheet.getpixel((i, j))[:3] for i in range(W) for j in range(H) if sheet.getpixel((i, j))[3]}

@@ -1,33 +1,37 @@
-// Performance in the browser: the Dry Run (300 drops; budget 50 ms, DESIGN.md §1) and frame times
-// with marbles in play. Usage: npm run perf (dev server on BASE).
+// Performance in the browser: the Sweat (500 nights; budget 50 ms, CLAUDE.md) on a busy floor, and
+// frame times with the crowd in. Usage: npm run perf (dev server on BASE).
 import fs from 'node:fs';
 import { open, outDir } from './lib.mjs';
 
 const out = outDir();
 const { browser, page, errors } = await open();
-const dry = await page.evaluate(async () => {
-  const { dryRun } = await import('/src/sim/dryrun.ts');
-  const { MARBLES } = await import('/src/data/marbles.ts');
-  const board = window.__app.screen.game.s.board;
-  dryRun(board, MARBLES.steel, 9, 300, 1);
+const sw = await page.evaluate(async () => {
+  const { sweat } = await import('/src/sim/sweat.ts');
+  const s = window.__app.screen;
+  for (const tb of [0, 1]) s.order({ t: 'setLimits', table: tb, min: 500, max: 50000 });
+  for (let i = 0; i < 14; i++) s.order({ t: 'spawn', type: i % 5 ? 'tourist' : 'highRoller' });
+  // a deep cage so the whales can't bust the house before we measure
+  s.game.s.cage = 1e9;
+  for (let t = 0; t < 900; t++) s.tick();
+  const g = s.game.s;
+  const seated = g.agents.filter((a) => a.phase === 'seated').length;
+  sweat(g, 500, 1);
   const times = [];
-  for (let c = 0; c < 20; c++) {
+  for (let k = 0; k < 10; k++) {
     const t0 = performance.now();
-    dryRun(board, MARBLES.steel, c, 300, 1000 + c);
+    sweat(g, 500, 100 + k);
     times.push(performance.now() - t0);
   }
   times.sort((a, b) => a - b);
-  return { medianMs: times[10], worstMs: times[19] };
+  return { seated, medianMs: times[5], worstMs: times[9] };
 });
-console.log('dry run, 300 drops:', dry, dry.worstMs < 50 ? 'within the 50 ms budget' : 'OVER the 50 ms budget');
+console.log('the Sweat, 500 nights:', sw, sw.worstMs < 50 ? 'within the 50 ms budget' : 'OVER the 50 ms budget');
 
-// live: twenty marbles in play, frame times over 3 seconds
 await page.evaluate(() => {
   const app = window.__app;
   app.fixedAlpha = null;
   app.loop.paused = false;
-  app.screen.game.s.bankroll = 1e7;
-  for (let c = 0; c < 20; c++) app.screen.drop(c);
+  app.loop.speed = 2;
 });
 const frames = await page.evaluate(() => new Promise((resolve) => {
   const L = window.__app.loop;
@@ -45,9 +49,9 @@ const frames = await page.evaluate(() => new Promise((resolve) => {
   };
   requestAnimationFrame(f);
 }));
-console.log('frames:', frames);
-fs.writeFileSync(`${out}/perf.json`, JSON.stringify({ dry, frames }, null, 1));
+console.log('frames at 2x:', frames);
+fs.writeFileSync(`${out}/perf.json`, JSON.stringify({ sweat: sw, frames }, null, 1));
 console.log('errors:', errors.length);
 for (const e of errors) console.log(e);
 await browser.close();
-if (dry.worstMs >= 50 || errors.length) process.exitCode = 1;
+if (sw.worstMs >= 50 || errors.length) process.exitCode = 1;

@@ -1,9 +1,9 @@
 @echo off
-rem Builds the Windows desktop version of Pegwork.
+rem Builds the Windows desktop version of Carpet Joint.
 rem Result (in the release folder):
-rem   Pegwork-Setup-<version>.exe     an installer (Start menu + desktop shortcut)
-rem   Pegwork-Portable-<version>.exe  a single exe that runs without installing
-title Build Pegwork for Windows
+rem   CarpetJoint-Setup-<version>.exe     an installer (Start menu + desktop shortcut)
+rem   CarpetJoint-Portable-<version>.exe  a single exe that runs without installing
+title Build Carpet Joint for Windows
 cd /d "%~dp0"
 
 set "NODE_DIR=%USERPROFILE%\tools\node-v22.20.0-win-x64"

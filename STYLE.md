@@ -34,11 +34,49 @@ sprites.
 
 ## Palette
 
-**Endesga 32, provisional** (it has the neon pinks, cyan and gold, plus warm carpet and felt
-ramps). The art director tests it in Milestone 0 on a neon letter, a tourist and the dice table,
-and either keeps it or proposes one replacement palette to the owner. The game palette file is
-`src/data/palette.ts`; the pipeline locks every sprite to it. Ramps get written here after the
-M0 test. Outline: ink (181425), one color, 1 px, on every sprite.
+**Endesga 32, kept after the M0 test** (the art director's call, pending the owner's review: it
+carries the neon pinks, cyan and gold plus warm wood, crimson leather and felt ramps; the M0 test
+used 4–15 colors a sprite and never wanted one it lacked). The game palette file is
+`src/data/palette.ts`; the pipeline locks every sprite to it (the saved palette keeps its old name,
+`pegwork`). Outline: ink (181425), one color, 1 px, on every sprite.
+
+**Material ramps** (shadow → light; names as `C` in `palette.ts` and `E` in `art/common.py`,
+`RAMPS` there):
+
+| Material | Ramp | Hex |
+|---|---|---|
+| skin (light) | clay · tan · peach | b86f50 c28569 e8b796 |
+| skin (dark) | walnut · clay · tan | 733e39 b86f50 c28569 |
+| felt | feltDark · felt · moss | 193c3e 265c42 3e8948 |
+| wood (table bodies, floor planks) | umber · walnut · clay · tan | 3e2731 733e39 b86f50 c28569 |
+| padded rail | plum · crimson · red | 68386c a22633 e43b44 |
+| brass and gold print | walnut · copper · brass · gold | 733e39 d77643 feae34 fee761 |
+| loud shirt | magenta · pink | b55088 f6757a |
+| khaki | tan · sand | c28569 e4a672 |
+| straw | tan · sand · chalk | c28569 e4a672 ead4aa |
+| neon pink | plum (glow) · magenta (halo) · pink (tube) · white (hot edge) | 68386c b55088 f6757a ffffff |
+| neon cyan | navy · blue · cyan · white | 262b44 124e89 2ce8f5 ffffff |
+| neon gold | walnut · ember · gold · white | 733e39 f77622 fee761 ffffff |
+
+## Art-direction decisions (M0 test, 2026-10-12)
+
+- **People are 12 × 20 and chunky**, with a silhouette break per type: the tourist's wide straw sun
+  hat. Two proportion variants were drawn for the owner: **chibi** (head and hat ~45% of the
+  height, the default) and **slim** (head ~30%, longer legs, more of a 70s fashion line).
+  `VARIANT` in `art/people/build_tourist.py` picks the one the game packs. The owner chooses.
+- **Light is a low lamp above each table, a little upper-left.** Masses take their light shade on
+  the left column and their shadow on the right; felt gets one lighter oval (cel, no dither).
+- **Tables are 3/4 top-down**: the top surface fills most of the footprint and the last 5 rows
+  are the near side in shadow, with a brass trim line. The padded rail is crimson leather.
+- **The dice table's layout is printed in gold**: HI and LO boxes either side, the 7 between,
+  in a 3 × 5 micro font. The centre of the felt stays quiet for the live dice.
+- **Neon is 2 px tubes** (a 5 × 6 skeleton drawn at ×2): the tube in pink, its top edge white-hot,
+  a 1 px magenta halo, a solid plum glow line above and below. Letters sit 13 px apart so halos
+  don't merge. The flicker frame (`:dim`) drops one step down the ramp and loses the glow.
+- **Seated gamblers**: behind a table they sit 4 px lower so the rail hides their legs; in front
+  they show their backs. The renderer sorts tables and people by their bottom edge.
+- The rest of the cast and the floor are code-drawn placeholders until the M3 art pass, at their
+  final names (`src/render/placeholders.ts`).
 
 ## Readability rules (gameplay, not decoration)
 
@@ -89,8 +127,8 @@ size change, and the style is uniform because one hand draws it.
    one sprite's frames per sheet, and a family sheet holds several sprites, so the pack step is
    ours. The engine's sheet loader (`src/render/sheets.ts`) reads them by sprite name, and a
    sheet sprite replaces the code-drawn placeholder of the same name.
-5. Never hand-edit a PNG; change the script. `e2e/coverage.mjs` lists every sprite the game
-   asks for and fails on a missing one.
+5. Never hand-edit a PNG; change the script. Until `e2e/coverage.mjs` exists (M3), the data test checks that every
+   sprite name the game asks for exists as a placeholder or in a sheet.
 
 If the skill is missing from the session, the art director says so and stops; it does not
 fall back to another generator, because mixed sources break the uniform look.

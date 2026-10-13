@@ -11,12 +11,12 @@ const DIST = path.join(__dirname, '..', 'dist');
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1536,
-    height: 864,
+    width: 1920,
+    height: 1080,
     minWidth: 768,
     minHeight: 432,
     backgroundColor: '#181425',
-    title: 'Pegwork',
+    title: 'Carpet Joint',
     autoHideMenuBar: true,
     webPreferences: { contextIsolation: true, sandbox: true },
   });

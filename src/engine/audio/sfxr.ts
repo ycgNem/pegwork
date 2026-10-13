@@ -1,6 +1,6 @@
 // jsfxr sound bank: retro SFX stored as base58 strings designed at https://sfxr.me. Each sound is
 // rendered once into the game's own AudioContext (so it obeys the SFX volume) and cached. Ids not in
-// the bank keep their synthesized fallback in Audio.sfx. Pegwork's bank is designed in Milestone 7.
+// the bank keep their synthesized fallback in Audio.sfx. Carpet Joint's bank is designed in Milestone 7.
 import { sfxr } from 'jsfxr';
 
 /** id -> base58 definition. Design a sound at sfxr.me, press "serialize", paste the string. */

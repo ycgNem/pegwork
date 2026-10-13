@@ -1,7 +1,7 @@
 @echo off
-rem Builds a web version of Pegwork and zips it for itch.io (or any static host).
-rem Result: pegwork-web.zip next to this file, plus the unzipped build in dist\
-title Package Pegwork for the web
+rem Builds a web version of Carpet Joint and zips it for itch.io (or any static host).
+rem Result: carpet-joint-web.zip next to this file, plus the unzipped build in dist\
+title Package Carpet Joint for the web
 cd /d "%~dp0"
 
 set "NODE_DIR=%USERPROFILE%\tools\node-v22.20.0-win-x64"
@@ -23,14 +23,14 @@ if errorlevel 1 (
   exit /b 1
 )
 
-echo Zipping dist into pegwork-web.zip ...
-powershell -NoProfile -Command "Compress-Archive -Path 'dist\*' -DestinationPath 'pegwork-web.zip' -Force"
+echo Zipping dist into carpet-joint-web.zip ...
+powershell -NoProfile -Command "Compress-Archive -Path 'dist\*' -DestinationPath 'carpet-joint-web.zip' -Force"
 if errorlevel 1 (
   echo Zipping failed.
   pause
   exit /b 1
 )
 echo.
-echo Done! Upload pegwork-web.zip to itch.io as an HTML game.
+echo Done! Upload carpet-joint-web.zip to itch.io as an HTML game.
 echo Upload it to itch.io as an HTML game.
 pause

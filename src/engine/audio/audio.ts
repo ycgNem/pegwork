@@ -1,5 +1,5 @@
 // Web Audio: the master, music and SFX buses, the jsfxr bank (src/engine/audio/sfxr.ts) and a few
-// synthesized placeholder sounds. Pegwork's real sound pass is Milestone 7; until then the board
+// synthesized placeholder sounds. Carpet Joint's real sound pass is Milestone 7; until then the floor
 // gets a tick on brass, a knock on wood and a clunk in a tin cup.
 import { playSfxr } from './sfxr';
 import { Music } from './music';
@@ -97,12 +97,12 @@ export class Audio {
     if (playSfxr(ctx, this.sfxBus, id, 0.35 * v, pitch)) return;
     switch (id) {
       case 'click': this.tone(900, 'square', { a: 0.002, d: 0.04 }, 0.05 * v); break;
-      // a marble on a brass peg: a short high tick
-      case 'peg': this.tone(2200 * pitch, 'triangle', { a: 0.001, d: 0.035 }, 0.05 * v); break;
-      // on the wooden frame: a dull knock
-      case 'wall': this.tone(320 * pitch, 'sine', { a: 0.001, d: 0.05 }, 0.07 * v, 0, 0.7); break;
-      // into a tin cup: a clunk, higher for the better cups
-      case 'cup': this.tone(180 * pitch, 'square', { a: 0.002, d: 0.09 }, 0.06 * v, 0, 0.6); this.tone(720 * pitch, 'triangle', { a: 0.002, d: 0.12 }, 0.04 * v, 0.02); break;
+      // chips on felt: a short soft tick
+      case 'chip': this.tone(1800 * pitch, 'triangle', { a: 0.001, d: 0.03 }, 0.035 * v); break;
+      // a win paid: two bright notes
+      case 'win': this.tone(660 * pitch, 'square', { a: 0.002, d: 0.06 }, 0.04 * v); this.tone(990 * pitch, 'square', { a: 0.002, d: 0.08 }, 0.035 * v, 0.06); break;
+      // the cage drawer: a low clunk
+      case 'cage': this.tone(160 * pitch, 'square', { a: 0.002, d: 0.1 }, 0.06 * v, 0, 0.6); break;
     }
   }
 }

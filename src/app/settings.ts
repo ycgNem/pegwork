@@ -2,7 +2,7 @@
 // blocked storage just means defaults.
 export interface Settings { master: number; music: number; sfx: number; muted: boolean }
 
-const KEY = 'pegwork:settings';
+const KEY = 'carpetjoint:settings';
 const DEFAULTS: Settings = { master: 0.8, music: 0.6, sfx: 0.8, muted: false };
 
 export function loadSettings(): Settings {

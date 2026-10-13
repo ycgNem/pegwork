@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "type": "module",
-  "description": "A pixel-art gambling roguelike where you build the marble machine you gamble on.",
+  "description": "A pixel-art casino roguelike: run the house on a neon 1970s strip.",
   "author": "ycgNem",
   "main": "electron/main.cjs",
   "scripts": {
@@ -32,7 +32,7 @@
   },
   "build": {
     "appId": "com.ycgnem.pegwork",
-    "productName": "Pegwork",
+    "productName": "Carpet Joint",
     "directories": { "output": "release", "buildResources": "build" },
     "files": ["dist/**/*", "electron/**/*", "package.json"],
     "win": { "target": ["nsis", "portable"], "signAndEditExecutable": false },
@@ -40,8 +40,8 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "artifactName": "Pegwork-Setup-${version}.exe"
+      "artifactName": "CarpetJoint-Setup-${version}.exe"
     },
-    "portable": { "artifactName": "Pegwork-Portable-${version}.exe" }
+    "portable": { "artifactName": "CarpetJoint-Portable-${version}.exe" }
   }
 }

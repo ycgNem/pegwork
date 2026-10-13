@@ -53,21 +53,38 @@ async function shot(name) {
 }
 
 // name -> setup; run in order, each from where the last left off
+const H = 1620;
+const order = (cmd) => page.evaluate((c) => window.__app.screen.order(c), cmd);
 const SC = {
-  'debug-idle': async () => { await page.mouse.move(1, 1); },
-  'debug-hover-edge': async () => { const [x, y] = await toPage(page, 12 + 4, 120); await page.mouse.move(x, y); },
-  'debug-hover-center': async () => { const [x, y] = await toPage(page, 12 + 9 * 8 + 4, 120); await page.mouse.move(x, y); },
-  'debug-drops': async () => {
+  'floor-open': async () => { await page.mouse.move(1, 1); },
+  'floor-busy': async () => { await step(page, Math.round(2.5 * H)); },
+  'bet-tooltip': async () => { const [x, y] = await toPage(page, 470, 18 + 28 + 11 + 2 * 11 + 3); await page.mouse.move(x, y); },
+  'sweat-tooltip': async () => { const [x, y] = await toPage(page, 480, 16 + 184 + 17 + 14 + 3); await page.mouse.move(x, y); },
+  'wheel-selected': async () => {
     await page.mouse.move(1, 1);
-    await page.evaluate(() => { const s = window.__app.screen; for (const c of [2, 9, 17]) s.drop(c); });
-    await step(page, 30);
+    await page.evaluate(() => { window.__app.screen.selected = 1; });
   },
-  'debug-results': async () => {
-    await page.evaluate(() => { const s = window.__app.screen; for (const c of [5, 11]) s.drop(c); });
-    await step(page, 500);
+  'danger-flash': async () => {
+    await order({ t: 'setLimits', table: 1, min: 500, max: 50000 });
+    await page.evaluate(() => { window.__app.screen.rs.time = 0; });
+    const [x, y] = await toPage(page, 104 + 11 * 16 + 8, 64 + 5 * 16 + 8);
+    await page.mouse.move(x, y);
   },
-  'debug-broke': async () => {
-    await page.evaluate(() => { window.__app.screen.game.s.bankroll = 150; });
+  'whale': async () => {
+    await page.mouse.move(1, 1);
+    await order({ t: 'spawn', type: 'highRoller' });
+    await step(page, 400);
+  },
+  'count-room': async () => { await step(page, 10 * H); },
+  'bust': async () => {
+    await page.evaluate(() => {
+      const s = window.__app.screen;
+      s.newNight();
+      s.order({ t: 'setLimits', table: 1, min: 2500, max: 250000 });
+      s.order({ t: 'setLimits', table: 0, min: 2500, max: 250000 });
+      for (let i = 0; i < 3; i++) s.order({ t: 'spawn', type: 'highRoller' });
+      for (let t = 0; t < 20000 && !s.game.s.busted; t++) s.tick();
+    });
   },
 };
 

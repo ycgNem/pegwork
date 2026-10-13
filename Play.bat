@@ -1,7 +1,7 @@
 @echo off
-rem Double-click to play Pegwork. Starts the game server and opens your browser.
+rem Double-click to play Carpet Joint. Starts the game server and opens your browser.
 rem Keep this window open while you play; close it to stop the game.
-title Pegwork
+title Carpet Joint
 cd /d "%~dp0"
 
 rem Use the portable Node.js on this PC if Node isn't already installed system-wide.
@@ -27,8 +27,8 @@ if not exist node_modules (
 )
 
 echo.
-echo Starting Pegwork... your browser will open at http://localhost:5173
+echo Starting Carpet Joint... your browser will open at http://localhost:5183
 echo Keep this window open while you play. Close it to stop the game.
 echo.
-call npm run dev -- --open
+call npm run dev -- --port 5183 --open
 pause

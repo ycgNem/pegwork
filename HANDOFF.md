@@ -4,18 +4,27 @@ Read this first, every session.
 
 ## Where things stand (2026-10-12)
 
-**The game was re-planned with the owner.** The marble board (Pegwork, whose Milestone 0 was
-built and published) is dropped. The new game is **Carpet Joint**: you run a casino on a neon
-1970s strip (DECISIONS #19–#29). The docs are rewritten (`PLAN.md`, `DESIGN.md`, `ROADMAP.md`,
-`CLAUDE.md`, `STYLE.md`). **The code is still the marble board**, and so is the live page.
+**Milestone 0 is done** (PROGRESS.md): the marble board is wiped; the foundation of Carpet Joint
+is built: the 640x360 screen, the exact odds calculator, the floor sim with gamblers who choose,
+walk, bet and leave, the cage and busting, the Sweat, the debug floor, the art-direction test
+sprites, the four agents, 38 tests, the e2e scripts.
 
-- **Next: the owner reviews `ROADMAP.md`**, then Milestone 0 (the wipe and the foundation).
-  Don't start it until the owner says so.
-- **The old build, still live:** https://ycgnem.github.io/pegwork/ (the marble board).
-- **Repo:** https://github.com/ycgNem/pegwork (public), branch `main`.
+- **Committed locally, not pushed.** Pushing to `main` deploys to
+  https://ycgnem.github.io/pegwork/ (still the marble board until then). Push only when the owner
+  says so.
+- **Next: Milestone 1, the slice** (ROADMAP.md), only when the owner says so. START-HERE.md's
+  Prompt 1 is to be written from what M0 measured.
 
-**Open with the owner:** whether anything in the new `PLAN.md` should be cut before code (asked,
-not yet answered).
+**Open with the owner:**
+1. The tourist's proportions: **chibi or slim** (`art/people/preview_tourist_*.png`,
+   `art/preview_context.png`; `VARIANT` in `art/people/build_tourist.py`). Chibi is packed.
+2. Endesga 32 kept after the neon test: confirm, or ask for another palette.
+3. Push M0 to the live page?
+4. Still unanswered from the re-plan: anything in PLAN.md to cut.
+
+**M1 must fix first** (DESIGN §4, DECISIONS #36): a starter night earns +$3,004, not +$900, and the
+greedy starter games don't cost the crowd yet. Rebalance tourist stop-losses, the word-of-mouth
+penalty and the buyout prices before pace test §11.1 can pass.
 
 ## Publishing and identity
 
@@ -32,17 +41,34 @@ not yet answered).
   `export PATH="/c/Users/jacks/tools/node-v22.20.0-win-x64:$PATH"`; in PowerShell:
   `$env:Path = "$env:USERPROFILE\tools\node-v22.20.0-win-x64;$env:Path"`. `Play.bat` does it itself.
 - `npm run dev -- --port 5183` (or the `pegwork` entry in `.claude/launch.json`).
-- `npm run typecheck`, `npm test`, `npm run shots`, `npm run screens`, `npm run perf`.
-- Art: `python art/build_all.py` (needs Python 3 + Pillow and the skill at
-  `~/.claude/skills/pixel-art-studio`).
+- `npm run typecheck`, `npm test`, `npm run shots`, `npm run screens` (report in
+  `e2e/out/screens/report.md`), `npm run perf`.
+- Art: `python art/build_all.py` (Python 3 + Pillow and the skill at
+  `~/.claude/skills/pixel-art-studio`); each `art/<family>/build_*.py` run alone writes its
+  previews; `python art/preview_context.py` shows the test sprites on the floor at 1x and x4.
 
-## What the M0 wipe keeps and deletes (ROADMAP M0, DECISIONS #29)
+## Code map
 
-- **Keep:** `src/engine/`, `src/ui/` (font, IMGUI kit, audit), `src/render/atlas.ts`, `sheets.ts`,
-  `pixel.ts`, `src/app/screen.ts` (re-scaled to 640×360) and `settings.ts`, the e2e harness
-  pattern, `.github/`, the `.bat` files, `electron/`, `art/common.py` and `art/palette/`.
-- **Delete:** `src/sim/physics/`, `src/sim/dryrun.ts`, the marble systems, `src/data/boards.ts`,
-  `marbles.ts`, `materials.ts`, `src/render/board.ts`, `placeholders.ts`, `src/app/debug.ts`,
-  `src/art/marbles.*`, `parts.*`, `art/marbles/`, `art/parts/`, `scripts/ev.ts`,
-  `scripts/tune-base.ts`, and the tests for all of it.
+- `src/sim/` pure and deterministic: `Game.ts` (system order, hash, replay, `applyNow`),
+  `commands.ts`, `events.ts`, `state.ts`, `systems/` (one per file), `odds/` (`odds.ts` compile,
+  `sample`, `ret`, `betOdds`; `rational.ts`), `settle.ts` (the one place money moves),
+  `choice.ts` (how a gambler picks), `floor.ts` (walkable grid, seats, flow fields), `sweat.ts`.
+- `src/data/`: `time`, `games`, `tables`, `gamblers`, `economy`, `floor`, `palette`. Every record
+  has a `derivation` naming a DESIGN.md section (tests/data.test.ts enforces it).
+- `src/app/`: `app.ts` (loop, input, audio, `window.__app` for e2e), `floorScreen.ts` (the debug
+  floor; `screen.order(cmd)`, `screen.tick()`), `screen.ts` (scaler), `settings.ts`.
+- `src/render/`: `floor.ts` (the floor, neon, floaters), `placeholders.ts` (code-drawn sprites at
+  final names, `spriteNames()`), `atlas.ts`, `sheets.ts`, `pixel.ts`. `src/ui/`: `ui.ts`, `font.ts`,
+  `audit.ts`. `src/art/`: packed sheets from `art/`.
+
+## Things to know
+
+- The editor, the live tables and the Sweat share `compile(game).sample/ret` and `settle`. Keep it
+  that way: never resolve a bet anywhere else.
+- A `GameDef` is immutable: edits replace it (`withPays`), which is what invalidates the compiled
+  and odds caches (WeakMaps keyed by the object).
+- Placing or moving a table must bump `floor.version` (the flow-field cache key).
+- Bets at one table are correlated; tourists love the one-pocket bet (thrill × log2 of the top
+  payout), so a full wheel swings hard. That's real, and M1's balance should keep it visible.
+- `mirror_x` in pixel-art-studio copies half a sprite; flip a cel for left/right facing.
 - The other game folders in Documents are read-only for this project.

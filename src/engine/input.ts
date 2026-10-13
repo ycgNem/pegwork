@@ -1,20 +1,20 @@
 // Keyboard + mouse input with rebindable actions. Edges are latched per frame.
-// (Extracted from the shared engine layer; Pegwork's actions below.)
+// (Extracted from the shared engine layer; Carpet Joint's actions below.)
 
-export const ACTIONS = ['left', 'right', 'drop', 'dryRun', 'pause', 'mute', 'debug'] as const;
+export const ACTIONS = ['pause', 'speed1', 'speed2', 'menu', 'mute', 'debug'] as const;
 export type Action = (typeof ACTIONS)[number];
 
 /** Debug keys exist only in dev builds or with ?debug in the address. */
 export const DEBUG_KEYS = !!import.meta.env?.DEV || (typeof location !== 'undefined' && new URLSearchParams(location.search).has('debug'));
 
 export const ACTION_LABELS: Record<Action, string> = {
-  left: 'Column left', right: 'Column right', drop: 'Drop a marble', dryRun: 'Run the Dry Run',
-  pause: 'Pause / close', mute: 'Mute', debug: 'Debug overlay',
+  pause: 'Pause the floor', speed1: 'Speed 1x', speed2: 'Speed 2x', menu: 'Menu / close',
+  mute: 'Mute', debug: 'Debug overlay',
 };
 
 export const DEFAULT_BINDS: Record<Action, string[]> = {
-  left: ['KeyA', 'ArrowLeft'], right: ['KeyD', 'ArrowRight'], drop: ['Space', 'Enter'], dryRun: ['KeyR'],
-  pause: ['Escape'], mute: ['KeyM'], debug: ['Backquote'],
+  pause: ['Space'], speed1: ['Digit1'], speed2: ['Digit2'], menu: ['Escape'],
+  mute: ['KeyM'], debug: ['Backquote'],
 };
 
 export function keyLabel(code: string): string {
@@ -107,7 +107,7 @@ export class Input {
   }
 
   wasPressed(a: Action): boolean {
-    if (this.textFocus && a !== 'pause') return false;
+    if (this.textFocus && a !== 'menu') return false;
     for (const k of this.binds[a]) if (this.pressed.has(k)) return true;
     return false;
   }
