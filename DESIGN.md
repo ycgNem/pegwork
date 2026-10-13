@@ -232,15 +232,47 @@ sense the edge, 0–1), a **stop-loss** and a **win goal**.
   gambler**: they leave and word of mouth takes −2. Cheats arrive at 0.5 a night on night 1,
   +0.25 a night after; they dress as a tourist (past-poster) or a local (slider), with one tell
   each (STYLE.md rule 1): a gold pinky ring, a spare chip in the cuff.
-- **Gaffs** (house cheating): shaved dice (moves the 2d6 sum distribution by a chosen bias), a
-  wheel brake (one pocket group ×1.5 less likely), a weighted ball. The editor shows true odds
-  beside the paytable's apparent odds.
-- **Spotting a gaff:** each round on a gaffed table, each seated gambler spots it with
-  `0.0005 × sharpness × bias strength`; an inspector at the table `0.02 × bias strength`.
-- **Heat** 0–100. +15 per gaff spotted, +3 per rough ejection, +10 per rival tip-off (the Outfit's
-  move). Cools 5 a night. **50:** an inspector visits every night. **75:** a raid (a fine of 25%
-  of the cage, the gaff confiscated, the table shut for a night). **100:** the license is pulled
-  and the run ends.
+- **Gaffs** (house cheating): shaved dice, a wheel brake (one pocket group ×1.5 less likely), a
+  weighted ball (M5). The editor shows the true odds beside what the crowd sees.
+- **Shaved dice** (M1): both dice tilt toward 1–3 (*low*) or 4–6 (*high*), each favored face
+  weighing 6 + strength against 6, at strength 1 (light), 2 (medium) or 3 (heavy). Hi-Lo's true
+  edges at 1:1 / 1:1 / 4:1 / 4:1:
+
+  | Shave | High 8–12 | Low 2–6 | Any Seven | Doubles |
+  |---|---|---|---|---|
+  | fair | 16.7% | 16.7% | 16.7% | 16.7% |
+  | low, light | 24.3% | 8.9% | 17.2% | 16.2% |
+  | low, medium | 30.6% | 2.0% | 18.4% | 15.0% |
+  | low, heavy | 36.0% | −4.0% | 20.0% | 13.3% |
+
+  (*high* mirrors High and Low.) **A shave is aimed, not free:** what it takes from one side it
+  gives the other, and no shave of two identical dice makes Doubles worse for the players (their
+  chance Σp² is lowest when the dice are fair). Against a crowd that splits High and Low evenly a
+  shave earns almost nothing; it pays when the paytable steers the crowd onto the shaved side
+  (pay Low a shade less and the sharp locals all play High). Shapes that keep the sides even
+  (favoring the 1–6 or 3–4 axis, or a mismatched pair) move the edges by under a point and were
+  dropped. Why the tilt: one control, a big visible effect, and the lesson that a rig is a
+  bet on what your crowd plays (pillar 2: the owner sees every true edge; the strip hears only
+  the paytable).
+- **Spotting a gaff:** each round on a shaved table, each seated gambler reads it with
+  `0.001 × sharpness × strength`, and the inspector watching that table with `0.02 × strength`
+  (heavy: 6% a round, so an hour's watch finds it almost surely). At most one read a round. A
+  gambler who reads it cashes out and walks, telling the strip (**−1.0 word of mouth**). Why
+  0.001 (the first guess was 0.0005): a full Hi-Lo table plays about 2,500 seat-rounds a night
+  with an average sharpness near 0.25, so a heavy shave is read about twice a night (+30 heat),
+  a light one about 0.6 times (+9, nearly what cools): a heavy gaff must bring a raid inside the
+  4-night slice, and 0.0005 couldn't (computed: about one read a night, +15 against 5 cooling,
+  about 40 by night 4 without an inspector's finding, short of 75).
+- **The inspector** comes every night from heat 50, below that with chance heat / 100; walks in
+  1–4 hours after the doors open, watches up to 3 open tables (a seeded order) for an hour each,
+  and leaves. A finding ends the tour. The owner can swap the fair dice back in at any moment,
+  so watching where the inspector walks is part of running a rigged floor.
+- **Heat** 0–100. **+15** a gambler's read, **+25** the inspector's finding (a Commission report
+  outweighs a rumor), **+3** a rough ejection (an honest gambler walked out), +10 a rival's
+  tip-off (the Outfit, M4). Cools 5 a night. **50:** an inspector every night. **75:** a raid, at
+  once: a fine of 25% of the cage, every gaff confiscated, the shaved tables shut for the rest of
+  the night and the next one. **100:** the license is pulled and the run ends. A raid doesn't
+  reset Heat, so shaving again after one is a short road to 100.
 
 ## 9. The Web (in run)
 
@@ -277,12 +309,22 @@ sense the edge, 0–1), a **stop-loss** and a **win goal**.
    greedy bot wins ≤ 20% of 20 seeds and the 8% tuner wins ≥ 35% and at least twice as often.
    Measured: greedy 3/20, tuner 8/20 (stage A); with wages (stage B) greedy 2/20, tuner 8/20
    once it hires one security guard (6/20 without: the payroll alone costs it two seasons).
+   *Stage C:* over 60 seeds the true rates are greedy 7% and tuner 28% (33% before equal bets
+   split the crowd; the first 20 seeds had been lucky for the tuner), so the test asks for
+   greedy ≤ 20% and tuner ≥ 25% and at least twice greedy. The lesson holds by a factor of four.
 2. **The Sweat matters:** a bot that keeps tonight's Sweat under 5% busts on ≤ 10% of seeds; a bot
    that accepts every whale and ignores the Sweat busts on ≥ 40%.
 3. **Winners are advertising:** an all-15%-edge bot's crowd share is ≥ 30% below an all-5% bot's by
    night 5, and it ends night 10 with less cash.
 4. **Cheating is a loan:** a bot that gaffs every table leads in cash at night 3 and is raided or
-   loses its license by night 8 on ≥ 70% of seeds.
+   loses its license by night 8 on ≥ 70% of seeds. *Slice scale (M1):* the gaffer bot (the
+   tuner's paytable, Low paid 1.1:1, the dice shaved low and heavy, shaved again after a raid)
+   is ahead of the tuner on mean cash after night 1 and behind after night 3, is raided by night
+   4 on ≥ 70% of 20 seeds, and wins no more slices than the tuner. Measured (40 seeds): mean cash
+   $2,208 vs $2,003 after night 1, $3,455 vs $3,539 after 2, $3,401 vs $5,542 after 3, $3,031 vs
+   $6,018 after 4; raided by night 4 on 34/40; wins 7 vs 12. The early lead is small because only
+   the sharp locals play the shaved side; the loss is large because the raid takes a quarter of
+   the cage and the dice table for two nights.
 5. **No dominant start:** each background's scripted build wins the season on 30–60% of seeds.
 6. **Pacing:** a night is 4.5 min ± 5 s of real time at 1×; a winning season's first buyout lands
    on night 3–5 and the flagship on night 8–10.

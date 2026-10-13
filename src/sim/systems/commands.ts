@@ -1,9 +1,11 @@
 // Apply this tick's commands, in the order they were queued, and log them for replay.
+import { addHeat, isShut, setGaff, withGaff } from '../heat';
+import { HEAT } from '../../data/heat';
 import { ECONOMY } from '../../data/economy';
 import type { GameDef } from '../../data/games';
 import { LIMITS } from '../../data/tables';
 import { TIME } from '../../data/time';
-import { standUp } from '../choice';
+import { closeTable, standUp } from '../choice';
 import type { Command } from '../commands';
 import { spawnGambler } from './arrivals';
 import { dealerOf } from '../staff';
@@ -14,18 +16,6 @@ import { leave } from './agents';
 import { beginNight, buyoutPrice } from '../season';
 import { STRIP } from '../../data/strip';
 import type { GameState } from '../state';
-
-/** Close a table: its seated gamblers get up and look for another. */
-function closeTable(g: GameState, id: number) {
-  const t = g.tables[id];
-  t.open = false;
-  for (const aid of t.seats) {
-    if (aid < 0) continue;
-    const a = g.agents[aid];
-    standUp(g, a);
-    a.phase = 'choose';
-  }
-}
 
 function reject(g: GameState, reason: string) {
   g.now.push({ t: 'rejected', reason });
@@ -59,6 +49,7 @@ function apply(g: GameState, c: Command) {
   switch (c.t) {
     case 'openTable':
       if (!dealerOf(g, table!.id)) return reject(g, 'the table needs a dealer');
+      if (isShut(g, table!)) return reject(g, 'the Commission has it shut tonight');
       table!.open = true;
       break;
     case 'closeTable':
@@ -73,7 +64,13 @@ function apply(g: GameState, c: Command) {
     }
     case 'editGame':
       if (c.game.randomizer.kind !== table!.game.randomizer.kind) return reject(g, 'a table keeps its randomizer');
-      table!.game = c.game;
+      // the editor can't rig a game: the dice stay as the table's gaff has them
+      table!.game = withGaff({ ...c.game, randomizer: { ...c.game.randomizer, weights: undefined } as typeof c.game.randomizer }, table!.gaff);
+      break;
+    case 'gaff':
+      if (table!.kind !== 'dice') return reject(g, 'only dice can be shaved');
+      if (c.gaff && !(c.gaff.strength >= 1 && c.gaff.strength <= 3 && (c.gaff.side === 'low' || c.gaff.side === 'high'))) return reject(g, 'no such shave');
+      setGaff(table!, c.gaff);
       break;
     case 'setPays':
       if (!(c.pays10 >= -1 && c.pays10 <= 10000) || !table!.game.bets[c.bet]) return reject(g, 'paytable entry out of range');
@@ -141,6 +138,7 @@ function apply(g: GameState, c: Command) {
       } else {
         // an honest gambler, accused: they leave, and the strip hears about it
         g.wom -= CHEAT_RULES.wrongRep;
+        addHeat(g, HEAT.roughHeat);
         a.ejected = true;
         leave(g, a);
       }

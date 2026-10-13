@@ -23,6 +23,7 @@ import { dealerOf, tablePace, wageOf } from '../sim/staff';
 import { stakeFor } from '../sim/settle';
 import { ROLES } from '../data/staff';
 import { CHEATS } from '../data/cheats';
+import { HEAT, SHAVE, type Gaff } from '../data/heat';
 import type { UI } from '../ui/ui';
 import { SCREEN_H, SCREEN_W } from './screen';
 
@@ -41,6 +42,11 @@ function gcd(a: number, b: number): number {
 }
 
 /** pays10 as odds: 40 -> "4:1", 15 -> "3:2", 0 -> "push", -1 -> "loses". */
+export const heatColor = (h: number) => (h >= HEAT.raidAt ? C.red : h >= HEAT.inspectorEvery ? C.ember : h >= 25 ? C.gold : C.leaf);
+
+/** What tonight's heat means for the inspector. */
+export const inspectorOdds = (h: number) => (h >= HEAT.inspectorEvery ? 'the inspector comes every night' : h > 0 ? `an inspector comes tonight ${h}% of the time` : 'no inspector');
+
 export function fmtPays(p: number): string {
   if (p < 0) return 'loses';
   if (p === 0) return 'push';
@@ -192,6 +198,18 @@ export class FloorScreen {
         case 'ejected':
           this.say(`Security walks one out${e.recovered ? `: ${money(e.recovered)} back to the cage` : ''}.`, C.brass);
           break;
+        case 'gaffSpotted':
+          if (e.agent < 0) this.say(`The inspector reads the shaved dice at ${g.tables[e.table].game.name}. Heat +${e.heat}.`, C.red);
+          else this.say(`A ${GAMBLER_TYPES[g.agents[e.agent].type].label.toLowerCase()} reads the dice at ${g.tables[e.table].game.name} and walks out talking. Heat +${e.heat}.`, C.red);
+          this.sfx('cage');
+          break;
+        case 'inspector':
+          this.say(e.what === 'arrived' ? 'The Gaming Commission\'s inspector walks in.' : 'The inspector leaves.', e.what === 'arrived' ? C.gold : C.steel);
+          break;
+        case 'raid':
+          this.say(`RAID. Fined ${money(e.fine)}; the dice confiscated${e.tables.length ? `, ${e.tables.map((i) => g.tables[i].game.name).join(', ')} shut tomorrow` : ''}.`, C.red);
+          this.sfx('cage');
+          break;
         case 'accused':
           if (!e.guilty) this.say('An honest gambler, accused. The strip will hear about it.', C.red);
           break;
@@ -304,7 +322,7 @@ export class FloorScreen {
     y += 27;
     ui.text('Bet', x + 6, y, C.slate);
     ui.text('Pays', x + 72, y, C.slate);
-    ui.text('Edge', x + 112, y, C.slate);
+    ui.text(t.gaff ? 'True' : 'Edge', x + 112, y, t.gaff ? C.red : C.slate);
     ui.text('Hit', x + 168, y, C.slate, { align: 'right' });
     y += 11;
     t.game.bets.forEach((b, i) => {
@@ -320,6 +338,7 @@ export class FloorScreen {
         ui.tip([
           { text: `${b.label}: pays ${fmtPays(p.pays10)}`, color: C.gold },
           { text: `House edge ${pct(o.edge, 2)} (exact ${o.edgeExact.n}/${o.edgeExact.d})`, color: edgeColor(o.edge) },
+          ...(t.gaff ? [{ text: `With the shaved dice. The crowd sees ${pct(betOdds(t.game, i, true).edge, 2)}.`, color: C.red }] : []),
           { text: `Swing: ${o.sigma.toFixed(2)} per $1 bet. Hits ${pct(o.hit)} of rounds.` },
         ], 160);
       y += 11;
@@ -339,6 +358,15 @@ export class FloorScreen {
     y += 12;
     if (ui.button('open', x + 6, y, 60, 12, t.open ? 'Close table' : 'Open table', { disabled: !t.open && !dealer, tip: !dealer ? 'Assign a dealer on the Staff tab first.' : undefined })) this.order({ t: t.open ? 'closeTable' : 'openTable', table: t.id });
     if (ui.button('whale', x + 70, y, 98, 12, 'Send in a whale', { disabled: g.phase !== 'night', tip: 'Debug: a high roller walks in now.' })) this.order({ t: 'spawn', type: 'highRoller' });
+    if (t.kind !== 'dice') return;
+    // the gaff: fair, then low light / medium / heavy, then high light / medium / heavy
+    y += 17;
+    const k = t.gaff ? (t.gaff.side === 'low' ? 0 : 3) + t.gaff.strength : 0;
+    const at = (n: number): Gaff | null => (n === 0 ? null : { side: n <= 3 ? 'low' : 'high', strength: (((n - 1) % 3) + 1) as 1 | 2 | 3 });
+    ui.text(t.gaff ? `Dice shaved ${t.gaff.side}, ${SHAVE.labels[t.gaff.strength - 1]}` : 'Dice: fair', x + 6, y, t.gaff ? C.red : C.steel);
+    const tip = 'Shaved dice favor 1-3 (low) or 4-6 (high). The Edge column shows the true odds; the crowd sees the fair ones. Every round risks a sharp gambler or the inspector reading them.';
+    if (ui.button('shave-', x + w - 44, y - 2, 17, 11, '<', { tip })) this.order({ t: 'gaff', table: t.id, gaff: at((k + 6) % 7) });
+    if (ui.button('shave+', x + w - 25, y - 2, 17, 11, '>', { tip })) this.order({ t: 'gaff', table: t.id, gaff: at((k + 1) % 7) });
   }
 
   /** The roster, what each does tonight, and (by day) the hiring hall. */
@@ -436,6 +464,26 @@ export class FloorScreen {
     if (pending) ui.text(`On the way: ${money(pending)}`, x + 6, y, C.sky);
     y += 12;
     ui.text(`Left up 50%: ${g.stats.leftUp}   broke fast: ${g.stats.leftBroke}`, x + 6, y, C.steel);
+    y += 14;
+    this.heatMeter(ui, x + 6, y, w - 14);
+  }
+
+  /** Heat with its thresholds marked, and where the Commission's inspector is (DESIGN.md §8). */
+  private heatMeter(ui: UI, x: number, y: number, w: number) {
+    const g = this.game.s;
+    ui.text(`Heat ${g.heat}`, x, y, heatColor(g.heat));
+    const ins = g.inspector;
+    const where = !ins ? (g.phase === 'day' ? (g.heat >= HEAT.inspectorEvery ? 'inspector every night' : g.heat > 0 ? `inspector ${g.heat}% tonight` : 'no inspector') : 'no inspector tonight') : ins.phase === 'due' ? 'inspector due tonight' : ins.phase === 'gone' ? 'the inspector has gone' : ins.phase === 'leave' ? 'the inspector is leaving' : `INSPECTOR AT ${g.tables[ins.table].game.name.toUpperCase()}`;
+    ui.text(where, x + w, y, ins && (ins.phase === 'walk' || ins.phase === 'watch') ? C.red : C.steel, { align: 'right' });
+    y += 11;
+    ui.bar(x, y, w, 5, g.heat / HEAT.licenseAt, heatColor(g.heat));
+    for (const m of [HEAT.inspectorEvery, HEAT.raidAt]) ui.fill(x + Math.round((w * m) / HEAT.licenseAt), y - 1, 1, 7, C.chalk);
+    if (ui.hover(x - 2, y - 13, w + 4, 20))
+      ui.tip([
+        { text: 'Heat: what the Gaming Commission has heard.', color: C.gold },
+        { text: `A gambler who reads your shaved dice: +${HEAT.gamblerHeat}. The inspector finding them: +${HEAT.inspectorHeat}. Roughing up an honest gambler: +${HEAT.roughHeat}. Cools ${HEAT.coolPerNight} a night.` },
+        { text: `${HEAT.inspectorEvery}: an inspector every night. ${HEAT.raidAt}: a raid (a quarter of the cage, the dice confiscated, the table shut tomorrow). ${HEAT.licenseAt}: the license.`, color: C.red },
+      ], 190);
   }
 
   /** The day: last night's count, tonight's strip, the rival, the cash, the buyout, the doors. */
@@ -477,6 +525,8 @@ export class FloorScreen {
     if (ui.button('tobank', x + w - 86, yy - 2, 76, 12, '+$500 bank', { tip: 'Move $500 from the cage to the bank.' })) this.order({ t: 'transferCash', cents: -50000 });
     yy += 18;
     ui.text('Edit paytables and limits on the right before you open.', x + 10, yy, C.slate);
+    yy += 14;
+    if (g.heat > 0 || g.tables.some((t) => t.gaff)) ui.text(`Heat ${g.heat}: ${inspectorOdds(g.heat)}.`, x + 10, yy, heatColor(g.heat));
     const bx = x + w / 2 - 60, by = y + h - 22;
     if (lastDay) {
       if (ui.button('walk', bx, by, 120, 15, 'Walk away', { tip: 'End the season without buying the Silver Dollar.' })) this.order({ t: 'closeSeason' });

@@ -18,6 +18,10 @@ export type GameEvent =
   | { t: 'accused'; agent: number; guilty: boolean }
   | { t: 'ejected'; agent: number; recovered: number }
   | { t: 'hired'; staff: number; role: Role }
+  /** a gaff read: by a seated gambler (agent) or the inspector (agent -1) */
+  | { t: 'gaffSpotted'; table: number; agent: number; heat: number }
+  | { t: 'inspector'; what: 'arrived' | 'left' }
+  | { t: 'raid'; fine: number; tables: number[] }
   /** a win the cage couldn't pay */
   | { t: 'bust'; table: number; agent: number; owed: number; cage: number }
   | { t: 'delivered'; cents: number }

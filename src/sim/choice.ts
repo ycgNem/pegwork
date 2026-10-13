@@ -30,11 +30,12 @@ export function chooseTable(g: GameState, a: Gambler): Pick | null {
     const [sx, sy] = seatTile(table, seat);
     const walk = walkTiles(flowField(g, sx, sy), g.floor.w, ax, ay);
     if (walk < 0) continue;
-    let best = -1, bestScore = -Infinity;
-    for (let b = 0; b < table.game.bets.length; b++) {
-      const s = betScore(g, a, table.id, b);
-      if (s > bestScore) [best, bestScore] = [b, s];
-    }
+    // the favorite bet; equal bets (High and Low at the same pays) split the crowd by gambler
+    let bestScore = -Infinity;
+    const scores = table.game.bets.map((_, b) => betScore(g, a, table.id, b));
+    for (const s of scores) bestScore = Math.max(bestScore, s);
+    const tied = scores.flatMap((s, b) => (bestScore - s < 1e-9 ? [b] : []));
+    const best = tied[a.id % tied.length];
     options.push({ pick: { table: table.id, seat, bet: best }, score: bestScore - CHOICE.walk * walk });
   }
   if (!options.length) return null;
@@ -68,4 +69,16 @@ export function standUp(g: GameState, a: Gambler) {
   }
   a.table = -1;
   a.seat = -1;
+}
+
+/** Close a table: its seated gamblers get up and look for another. */
+export function closeTable(g: GameState, id: number) {
+  const t = g.tables[id];
+  t.open = false;
+  for (const aid of t.seats) {
+    if (aid < 0) continue;
+    const a = g.agents[aid];
+    standUp(g, a);
+    a.phase = 'choose';
+  }
 }

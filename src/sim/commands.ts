@@ -3,6 +3,7 @@
 import type { GameDef } from '../data/games';
 import type { GamblerType } from '../data/gamblers';
 import type { CheatKind } from '../data/cheats';
+import type { Gaff } from '../data/heat';
 
 export type Command =
   | { t: 'openTable'; table: number }
@@ -14,6 +15,8 @@ export type Command =
   | { t: 'editGame'; table: number; game: GameDef }
   /** one paytable entry: pays10 for a bet (for a catch bet, the entry for `hits`) */
   | { t: 'setPays'; table: number; bet: number; pays10: number; hits?: number }
+  /** shave a dice table's dice (null: put the fair dice back); any time, even with the inspector in */
+  | { t: 'gaff'; table: number; gaff: Gaff | null }
   /** the armored car: cents from the bank to the cage, arriving in an hour */
   | { t: 'callArmoredCar'; cents: number }
   /** debug floor only: a gambler of this type walks in now */

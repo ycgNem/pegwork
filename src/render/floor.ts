@@ -81,6 +81,16 @@ function drawTable(ctx: CanvasRenderingContext2D, g: GameState, t: TableState, v
   }
 }
 
+/** The inspector watching a table turns toward its middle. */
+function watchFacing(g: GameState, ins: NonNullable<GameState['inspector']>): Dir {
+  const t = g.tables[ins.table];
+  if (!t) return 'd';
+  const k = TABLE_KINDS[t.kind];
+  const cx = (t.x + k.w / 2) * TILE * SUB, cy = (t.y + k.h / 2) * TILE * SUB;
+  const dx = cx - ins.x, dy = cy - ins.y;
+  return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'r' : 'l') : dy > 0 ? 'd' : 'u';
+}
+
 /** Where a staff member stands tonight (floor px, feet), or null when off the floor. */
 function staffSpot(g: GameState, s: StaffMember, alpha: number): { x: number; y: number; dir: Dir; moving: boolean } | null {
   const c = (t: number) => t * TILE + TILE / 2;
@@ -218,6 +228,19 @@ export function drawFloor(ctx: CanvasRenderingContext2D, g: GameState, v: FloorV
   for (const a of g.agents) {
     if (a.phase === 'gone') continue;
     items.push({ y: a.y / SUB, draw: () => drawGambler(ctx, g, a, v, alpha, rs) });
+  }
+  const ins = g.inspector;
+  if (g.phase === 'night' && ins && ins.phase !== 'due' && ins.phase !== 'gone') {
+    const ix = ins.px + (ins.x - ins.px) * alpha, iy = ins.py + (ins.y - ins.py) * alpha;
+    const dx = ins.x - ins.px, dy = ins.y - ins.py;
+    const moving = !!(dx || dy);
+    // watching: face the table
+    const dir: Dir = moving ? (Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'r' : 'l') : dy > 0 ? 'd' : 'u') : ins.phase === 'watch' ? watchFacing(g, ins) : 'd';
+    const at = { x: Math.round(ix / SUB), y: Math.round(iy / SUB) };
+    items.push({ y: at.y, draw: () => {
+      rect(ctx, v.ox + at.x - 4, v.oy + at.y, 8, 1, C.umber);
+      drawSprite(ctx, sprite(`inspector:${dir}:${moving ? Math.floor(rs.time * 7) % 4 : 0}`), v.ox + at.x, v.oy + at.y);
+    } });
   }
   if (g.phase === 'night') for (const s of g.staff) {
     const at = staffSpot(g, s, alpha);

@@ -6,6 +6,7 @@ import type { FixtureKind } from '../data/floor';
 import type { TableKind } from '../data/tables';
 import type { RivalMove } from '../data/strip';
 import type { CheatKind } from '../data/cheats';
+import type { Gaff } from '../data/heat';
 import type { Role } from '../data/staff';
 import type { Rng } from '../engine/rng';
 import type { Command, LoggedCommand } from './commands';
@@ -18,6 +19,10 @@ export interface TableState {
   x: number;
   y: number;
   game: GameDef;
+  /** the shaved dice on this table, or null (the game's weights follow it; DESIGN.md §8) */
+  gaff: Gaff | null;
+  /** a raid shut the table through this night (0: never raided) */
+  shutNight: number;
   /** limits, cents */
   min: number;
   max: number;
@@ -121,6 +126,26 @@ export interface NightRecord {
   share: number;
   wom: number;
   wages: number;
+  /** a raid's fine tonight, cents */
+  fines: number;
+  /** heat at dawn, before it cools */
+  heat: number;
+}
+
+/** The Gaming Commission's inspector (DESIGN.md §8): walks in, watches a few tables, walks out. */
+export interface Inspector {
+  /** 'due': walks in at `at`; 'walk' to the table being toured; 'watch' it until `at`; 'leave' */
+  phase: 'due' | 'walk' | 'watch' | 'leave' | 'gone';
+  at: number;
+  /** the tables left to watch, in order, and the one now */
+  tour: number[];
+  table: number;
+  x: number;
+  y: number;
+  px: number;
+  py: number;
+  tx: number;
+  ty: number;
 }
 
 export interface RivalState {
@@ -180,6 +205,13 @@ export interface GameState {
   log: LoggedCommand[];
   now: GameEvent[];
   settle: Settlement[];
+  /** Heat, 0-100 (DESIGN.md §8) */
+  heat: number;
+  heatRng: Rng;
+  /** tonight's inspector, if one comes */
+  inspector: Inspector | null;
+  /** raid fines tonight, cents */
+  fines: number;
   /** this tick's cheating rounds, from the tables to the cheats system */
   cheatRounds: { table: number; agent: number; kind: CheatKind }[];
   stats: Stats;

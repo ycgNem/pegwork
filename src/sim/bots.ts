@@ -95,6 +95,22 @@ export const TUNER: Policy = {
   },
 };
 
+/**
+ * The cheat (DESIGN.md §11.4): the tuner's paytable, but Low pays a shade less so the sharp crowd
+ * plays High, and the dice shaved heavy toward low (High's true edge 29.6%, posted 8.3%). It
+ * shaves them again after every raid.
+ */
+export const GAFFER: Policy = {
+  name: 'gaffer',
+  day(g) {
+    const out = TUNER.day(g).filter((c) => c.t !== 'buyout' && c.t !== 'transferCash');
+    if (g.night === 1) out.push({ t: 'setPays', table: 0, bet: 1, pays10: 11 });
+    if (!g.tables[0].gaff) out.push({ t: 'gaff', table: 0, gaff: { side: 'low', strength: 3 } });
+    const buy = buyIfAble(g);
+    return [...out, ...(buy.length ? buy : keepCage(g, 400000))];
+  },
+};
+
 /** Top the cage up from the bank to `target` (a cautious owner's day). */
 export function keepCage(g: GameState, target: number): Command[] {
   const need = Math.min(g.bank, target - g.cage);

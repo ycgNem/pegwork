@@ -2,6 +2,35 @@
 
 What is built. Newest first.
 
+## 2026-10-12 — Milestone 1, stage C: the gaff, Heat, the inspector, the raid
+
+**Shaved dice** (`src/data/heat.ts`, `src/sim/heat.ts`): a dice table's dice tilt toward low or
+high, light to heavy (DECISIONS #46); the `gaff` command works day or night; `editGame` can't
+rig weights behind it. The strip still hears the paytable; the table panel shows the true edges
+("True" column, red), the tooltip what the crowd sees, and a `< >` control: fair, low light /
+medium / heavy, high light / medium / heavy.
+
+**Heat** (`systems/heat.ts`, DESIGN §8, #47): gamblers at a shaved table read it (they walk out,
+−1 word of mouth, +15 heat); the Gaming Commission's inspector (every night from 50, else heat%)
+walks in 1–4 hours after open, watches up to 3 open tables an hour each (+25 on a finding);
+the raid at 75 (a quarter of the cage, the dice confiscated, the table shut tonight and
+tomorrow); 100 pulls the license. Cools 5 a night; +3 for roughing up an honest gambler. The
+night record keeps fines and heat.
+
+**UI**: the heat meter in the cage panel with the 50 and 75 marks, where the inspector is and a
+tooltip with every rule; the day panel's heat line and tonight's inspector odds; ticker lines for
+reads, the inspector and the raid; the inspector on the floor (code-drawn: tan trench coat,
+fedora, clipboard; `inspector:<dir>:<f>`), facing the table it watches.
+
+**Crowd**: equal bets now split by gambler (#48).
+
+**Tests** (64): the shave moves the true edge and not the posted one, exact edges; only dice;
+the editor can't rig; a sharp gambler reads heavy dice, fair dice are never read; the inspector
+comes from 50 and finds a gaff; the raid (fine, confiscation, shut now and tomorrow); the license;
+cooling and rough ejections; a night with a gaff and the inspector replays bit for bit; equal
+bets split; pace §11.4 at slice scale (the gaffer bot). §11.1 restated from a 60-seed
+measurement (DESIGN §11). **Screens** (19, 0 issues): adds shaved, shave-tooltip, inspector, raid.
+
 ## 2026-10-12 — Milestone 1, stage B: staff and cheats
 
 **Staff** (`src/data/staff.ts`, `src/sim/staff.ts`, `systems/staff.ts`): dealers, pit bosses,

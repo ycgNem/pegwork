@@ -221,7 +221,37 @@ function staffSprite(role: Role, dir: Dir, walk: number) {
   };
 }
 
+/** The Gaming Commission's inspector: a tan trench coat and a fedora, a clipboard. */
+function inspectorSprite(dir: Dir, walk: number) {
+  return {
+    w: 12, h: 20, ox: 6, oy: 19,
+    draw: (ctx: CanvasRenderingContext2D) => {
+      const swing = walk === 1 ? 1 : walk === 3 ? -1 : 0;
+      rect(ctx, 3, 15, 6, 4, C.ink);
+      rect(ctx, 4, 15, 2, 3 + (swing > 0 ? 0 : 1), C.navy);
+      rect(ctx, 6, 15, 2, 3 + (swing < 0 ? 0 : 1), C.navy);
+      rect(ctx, 2, 7, 8, 9, C.ink);
+      rect(ctx, 3, 8, 6, 7, C.tan);
+      if (dir !== 'u') { rect(ctx, 5, 8, 2, 4, C.white); rect(ctx, 3, 12, 6, 1, C.walnut); }
+      rect(ctx, 1, 8, 2, 6, C.ink);
+      rect(ctx, 9, 8, 2, 6, C.ink);
+      if (dir === 'd' || dir === 'r') rect(ctx, 8, 10, 3, 4, C.white);
+      rect(ctx, 3, 2, 6, 6, C.ink);
+      rect(ctx, 4, 3, 4, 4, C.peach);
+      if (dir === 'u') rect(ctx, 4, 3, 4, 3, C.umber);
+      else if (dir === 'd') { px(ctx, 5, 5, C.ink); px(ctx, 7, 5, C.ink); }
+      else px(ctx, dir === 'l' ? 4 : 7, 5, C.ink);
+      // the fedora's brim and crown
+      rect(ctx, 2, 2, 8, 1, C.ink);
+      rect(ctx, 3, 0, 6, 2, C.ink);
+      rect(ctx, 4, 1, 4, 1, C.walnut);
+      rect(ctx, 3, 2, 6, 1, C.walnut);
+    },
+  };
+}
+
 export function definePlaceholders() {
+  for (const dir of DIRS) for (let f = 0; f < 4; f++) defSprite(`inspector:${dir}:${f}`, inspectorSprite(dir, f));
   for (const role of Object.keys(STAFF_LOOKS) as Role[])
     for (const dir of DIRS) for (let f = 0; f < 4; f++) defSprite(`staff:${role}:${dir}:${f}`, staffSprite(role, dir, f));
   for (const type of Object.keys(LOOKS) as GamblerType[])
@@ -249,5 +279,6 @@ export function spriteNames(): string[] {
   for (let f = 0; f < 8; f++) names.push(`table:wheel:${f}`);
   names.push('table:dice', 'table:drum', 'fixture:cage', 'fixture:bar', 'fixture:entrance');
   for (const role of Object.keys(STAFF_LOOKS)) for (const dir of DIRS) for (let f = 0; f < 4; f++) names.push(`staff:${role}:${dir}:${f}`);
+  for (const dir of DIRS) for (let f = 0; f < 4; f++) names.push(`inspector:${dir}:${f}`);
   return names;
 }

@@ -6,6 +6,9 @@ import { TABLE_KINDS } from '../data/tables';
 import { betOdds } from './odds/odds';
 import { rollHall, securityPost, wageOf } from './staff';
 import { center } from './floor';
+import { isShut } from './heat';
+import { HEAT } from '../data/heat';
+import { TIME } from '../data/time';
 import type { GameState } from './state';
 
 /** Gamblers on the strip on a night. */
@@ -68,8 +71,17 @@ export function beginNight(g: GameState) {
   g.settle = [];
   g.cheatRounds = [];
   g.wom = 0;
-  // tables with no dealer stay dark tonight; security starts at its post
-  for (const t of g.tables) if (!g.staff.some((s) => s.role === 'dealer' && s.table === t.id)) t.open = false;
+  // tables with no dealer, or shut by a raid, stay dark tonight; security starts at its post
+  for (const t of g.tables) if (!g.staff.some((s) => s.role === 'dealer' && s.table === t.id) || isShut(g, t)) t.open = false;
+  g.fines = 0;
+  // the Commission sends its inspector every night from heat 50, below that with chance heat / 100
+  g.inspector = null;
+  if (g.heat > 0 && (g.heat >= HEAT.inspectorEvery || g.heatRng.int(0, 99) < g.heat)) {
+    const [a, b] = HEAT.inspectorArrive;
+    const at = g.tick + g.heatRng.int(a, b) * TIME.ticksPerHour;
+    const [dx, dy] = g.floor.door;
+    g.inspector = { phase: 'due', at, tour: [], table: -1, x: center(dx), y: center(dy), px: center(dx), py: center(dy), tx: dx, ty: dy };
+  }
   const [sx, sy] = securityPost(g);
   for (const s of g.staff) if (s.role === 'security') [s.x, s.y, s.px, s.py, s.tx, s.ty, s.target] = [center(sx), center(sy), center(sx), center(sy), sx, sy, -1];
   g.stats = { arrived: 0, left: 0, leftUp: 0, leftBroke: 0, rounds: 0, handle: 0, net: 0 };
@@ -91,7 +103,9 @@ export function endNight(g: GameState) {
   const fromBank = Math.min(Math.max(0, g.bank), wages);
   g.bank -= fromBank;
   g.cage -= wages - fromBank;
-  g.history.push({ night: g.night, net: g.stats.net, arrivals: g.stats.arrived, share: g.share, wom: g.wom, wages });
+  g.history.push({ night: g.night, net: g.stats.net, arrivals: g.stats.arrived, share: g.share, wom: g.wom, wages, fines: g.fines, heat: g.heat });
+  g.heat = Math.max(0, g.heat - HEAT.coolPerNight);
+  g.inspector = null;
   g.reputation = Math.round((g.reputation * STRIP.repKeep) / 1000) + g.wom;
   const r = g.rival;
   if (!r.bought) {

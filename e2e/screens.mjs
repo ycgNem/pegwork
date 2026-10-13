@@ -118,9 +118,41 @@ const SC = {
     });
     await step(page, 120);
   },
+  'shaved': async () => {
+    await page.mouse.move(1, 1);
+    await page.evaluate(() => { const s = window.__app.screen; s.selected = 0; s.rs.selectedAgent = -1; });
+    await order({ t: 'gaff', table: 0, gaff: { side: 'low', strength: 3 } });
+  },
+  'shave-tooltip': async () => { const [x, y] = await toPage(page, 470, 18 + 14 + 27 + 11 + 3); await page.mouse.move(x, y); },
   'day-2': async () => {
     await page.evaluate(() => { window.__app.screen.game.s.cage = 5000000; });
     await step(page, 10 * H);
+  },
+  'inspector': async () => {
+    await page.mouse.move(1, 1);
+    await page.evaluate(() => {
+      const s = window.__app.screen, g = s.game.s;
+      g.heat = 60;
+      s.order({ t: 'gaff', table: 0, gaff: { side: 'low', strength: 1 } });
+      s.order({ t: 'openDoors' });
+      // nobody at the tables reads the dice tonight, so the inspector gets to watch
+      for (let t = 0; t < 20000 && g.inspector?.phase !== 'watch'; t++) {
+        for (const a of g.agents) a.sharpness = 0;
+        s.tick();
+      }
+      for (let t = 0; t < 300; t++) s.tick();
+    });
+  },
+  'raid': async () => {
+    await page.evaluate(() => {
+      const s = window.__app.screen, g = s.game.s;
+      g.heat = Math.max(g.heat, 74);
+      if (!g.tables[0].gaff) s.order({ t: 'gaff', table: 0, gaff: { side: 'low', strength: 3 } });
+      for (let t = 0; t < 30000 && !g.fines && g.result === 'playing'; t++) {
+        for (const a of g.agents) a.sharpness = 1000;
+        s.tick();
+      }
+    });
   },
   'bust': async () => {
     await page.evaluate(() => {

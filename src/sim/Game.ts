@@ -91,7 +91,7 @@ export class Game {
       crowdRng: new Rng(hashStr(`crowd:${opts.seed}`)),
       floor: { w: floor.w, h: floor.h, door: [...floor.door], fixtures: floor.fixtures.map((f) => ({ ...f })), version: 0 },
       tables: floor.tables.map((t, i) => ({
-        id: i, kind: t.kind, x: t.x, y: t.y, game: STARTER_GAMES[t.game],
+        id: i, kind: t.kind, x: t.x, y: t.y, game: STARTER_GAMES[t.game], gaff: null, shutNight: 0,
         min: LIMITS.defaultMin, max: LIMITS.defaultMax, open: true,
         rng: new Rng(tableSeed(opts.seed, i)), acc: 0,
         seats: TABLE_KINDS[t.kind].seats.map(() => -1),
@@ -110,6 +110,10 @@ export class Game {
       now: [],
       settle: [],
       cheatRounds: [],
+      heat: 0,
+      heatRng: new Rng(hashStr(`heat:${opts.seed}`)),
+      inspector: null,
+      fines: 0,
       stats: { arrived: 0, left: 0, leftUp: 0, leftBroke: 0, rounds: 0, handle: 0, net: 0 },
     };
     seedRival(this.s);
@@ -190,8 +194,13 @@ export class Game {
     w(g.staffRng.s); w(g.nextStaff);
     for (const s of g.staff) { w(s.id); w(s.skill); w(s.table); w(s.x); w(s.y); w(s.target); for (const t of s.watch) w(t); }
     for (const s of g.hall) w(s.id);
+    w(g.heat); w(g.heatRng.s); w(g.fines);
+    const ins = g.inspector;
+    if (ins) { w(['due', 'walk', 'watch', 'leave', 'gone'].indexOf(ins.phase)); w(ins.at); w(ins.table); w(ins.x); w(ins.y); for (const t of ins.tour) w(t); }
     for (const t of g.tables) {
       w(t.rng.s); w(t.acc); w(t.open ? 1 : 0); w(t.min); w(t.max); w(t.rounds); big(t.handle); big(t.net + 2 ** 40);
+      // the game itself: paytable edits and gaffs decide the future too
+      w(hashStr(JSON.stringify(t.game))); w(t.gaff ? (t.gaff.side === 'low' ? 1 : 4) + t.gaff.strength : 0); w(t.shutNight);
       for (const s of t.seats) w(s);
     }
     const PH = { choose: 0, walk: 1, seated: 2, leave: 3, gone: 4 };
