@@ -2,6 +2,41 @@
 
 What is built. Newest first.
 
+## 2026-10-12 — Milestone 1, stage B: staff and cheats
+
+**Staff** (`src/data/staff.ts`, `src/sim/staff.ts`, `systems/staff.ts`): dealers, pit bosses,
+security and a cashier with skill 1–3 and a wage (DESIGN §3). A dealer sets the table's pace (×0.8
+/ ×1 / ×1.25) and a table needs one to open; pit bosses watch up to 3 tables; security walks the
+flow field to a spotted cheat and walks them out; the doors need a cashier. Wages at dawn. The
+day's hiring hall (6 seeded candidates); `hire`, `fire`, `assign` commands. Starting staff: 2
+dealers, a pit boss watching both tables, a cashier.
+
+**Cheats** (`src/data/cheats.ts`, `systems/tables.ts`, `systems/cheats.ts`): the dice slider and
+the past-poster (DESIGN §8, DECISIONS #44), arriving 0.5 a night +0.25 a night, dressed as a local
+or a tourist with one tell. Pit bosses spot cheating rounds (2% per skill level); a spotted cheat
+is walked out and their winnings come back; `accuse` for the owner (−2 word of mouth if wrong).
+
+**UI**: the right panel has Table / Staff tabs. Staff: each member's role, skill, name and job,
+one button a row (deal the selected table, watch it, fire by day) and tooltips with the wage and
+what the role does; by day the hiring hall with wages. Click a gambler for their card (type,
+up/down, bet and stake, SPOTTED CHEATING, Accuse / Walk them out). Staff draw on the floor
+(dealers at their tables, the pit boss between the tables they watch, the cashier at the cage,
+security walking). Spotted '!' and the selection chevron (#45). Ticker lines for spots, walk-outs
+and wrong accusations. Win floaters no longer overlap when they stack.
+
+**Tests** (51): dealer pace, no dealer no table, wages and the cashier rule, the hiring hall, a
+slider beats the dice, a pit boss spots a past-poster and security recovers the money, no
+security means they keep playing, a wrong accusation, a whole night with cheats replays bit for
+bit; the slice pace test with wages (DESIGN §11.1). **Screens** (15, 0 overlap issues): adds
+day-1-staff, cheat-spotted, staff-night, ejected.
+
+## 2026-10-12 — Milestone 1, stage A: the season
+
+Days and nights over a 4-night slice (DECISIONS #39); the strip's crowd split by reputation and
+posted edge (#40); word of mouth rebalanced with fast wipe-outs and 80% stop-losses (#41); the
+Undercutter's nights and moves and the buyout (#42); the day panel and the result screen; season
+bots (greedy, the 8% tuner) and the slice pace test (DESIGN §11.1).
+
 ## 2026-10-12 — Milestone 0: wipe and foundation
 
 **The wipe** (its own commit, d18e8f7): the marble board's physics, Dry Run, data, renderer, debug

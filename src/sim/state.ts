@@ -5,6 +5,8 @@ import type { GamblerType } from '../data/gamblers';
 import type { FixtureKind } from '../data/floor';
 import type { TableKind } from '../data/tables';
 import type { RivalMove } from '../data/strip';
+import type { CheatKind } from '../data/cheats';
+import type { Role } from '../data/staff';
 import type { Rng } from '../engine/rng';
 import type { Command, LoggedCommand } from './commands';
 import type { GameEvent } from './events';
@@ -27,7 +29,7 @@ export interface TableState {
   /** agent id per seat, -1 when empty */
   seats: number[];
   /** the last outcomes, newest last (the eye in the sky's replay; at most 10) */
-  last: { tick: number; outcome: number }[];
+  last: { tick: number; outcome: number; cheat: number }[];
   rounds: number;
   /** cents bet and the house's net tonight */
   handle: number;
@@ -67,6 +69,31 @@ export interface Gambler {
   noise: number;
   stopLoss: number;
   winGoal: number;
+  /** a cheat in disguise (their `type` is the look they pose as), or null */
+  cheat: CheatKind | null;
+  /** a pit boss has spotted them cheating */
+  spotted: boolean;
+  /** security is walking them out */
+  ejected: boolean;
+}
+
+export interface StaffMember {
+  id: number;
+  role: Role;
+  name: string;
+  skill: 1 | 2 | 3;
+  /** a dealer's table (-1: off the floor) */
+  table: number;
+  /** the tables a pit boss watches */
+  watch: number[];
+  /** security walks: position, target tile, the gambler it's after (-1: at its post) */
+  x: number;
+  y: number;
+  px: number;
+  py: number;
+  tx: number;
+  ty: number;
+  target: number;
 }
 
 export interface Fixture { kind: FixtureKind; x: number; y: number; w: number; h: number }
@@ -127,6 +154,11 @@ export interface GameState {
   /** reputation, per mille points of word of mouth (DESIGN.md §5, §7) */
   reputation: number;
   rival: RivalState;
+  staff: StaffMember[];
+  nextStaff: number;
+  /** today's hiring hall */
+  hall: StaffMember[];
+  staffRng: Rng;
   result: 'playing' | 'won' | 'lost';
   lostReason: string;
   history: NightRecord[];
@@ -148,6 +180,8 @@ export interface GameState {
   log: LoggedCommand[];
   now: GameEvent[];
   settle: Settlement[];
+  /** this tick's cheating rounds, from the tables to the cheats system */
+  cheatRounds: { table: number; agent: number; kind: CheatKind }[];
   stats: Stats;
 }
 

@@ -87,6 +87,9 @@ export const TUNER: Policy = {
       out.push({ t: 'setPays', table: 0, bet: 2, pays10: 45 }, { t: 'setPays', table: 0, bet: 3, pays10: 45 });
       out.push({ t: 'setPays', table: 1, bet: 2, pays10: 210 });
     }
+    // one guard on the door, so a spotted cheat gets walked out
+    const guard = g.hall.find((s) => s.role === 'security');
+    if (guard && !g.staff.some((s) => s.role === 'security')) out.push({ t: 'hire', candidate: guard.id });
     const buy = buyIfAble(g);
     return [...out, ...(buy.length ? buy : keepCage(g, 400000))];
   },

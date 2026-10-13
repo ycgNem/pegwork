@@ -78,7 +78,23 @@ and editing a paytable fixes it. Pace test §11.1 encodes it.
 | Wheel | 6 | 45 | 2×2 | $1,500 |
 | Ball drum | 8 | 12 (a draw of 10 balls) | 3×2 | $1,800 |
 
-- **Dealer skill** moves rounds per hour from ×0.8 (green) to ×1.25 (veteran). Wage $40 per night.
+- **Dealer skill** moves rounds per hour from ×0.8 (green) to ×1.25 (veteran): Hi-Lo deals 64,
+  80 or 100 rounds an hour. **A table needs a dealer to open**; taking its dealer away closes it.
+- **Staff and wages** (a night, by green / standard / veteran; paid at dawn from the bank, then
+  the cage; a payroll the house can't meet ends the season):
+
+  | Role | Does | Wage |
+  |---|---|---|
+  | Dealer | runs one table at its pace | $30 / $40 / $55 |
+  | Pit boss | watches up to 3 tables for cheats (§8) | $60 / $75 / $90 |
+  | Security | walks a spotted or accused cheat out, 1.5× a gambler's walk | $50 / $50 / $65 |
+  | Cashier | the cage needs one to open the doors | $40 |
+
+  The starting staff (§4) costs **$195 a night**, about 6% of a starter night's +$3,000. Why
+  these wages: a dealer at a standard table earns its $40 back in the first hour (§3's $60/hour
+  wheel); a veteran's ×1.25 pace is worth its extra $15 only on a table that's full. The hiring
+  hall offers 6 candidates a day (2 dealers, 1 pit boss, 2 security, 1 cashier), skills drawn
+  35% green, 45% standard, 20% veteran.
 - **Limits:** minimum $1–$25, maximum ×5 to ×100 of the minimum. Layer-0 default $2–$50.
 - **A table's expected earnings per hour** = `E × average bet × filled seats × rounds per hour`.
   Example: Red Wheel red/black at 8.3%, $4 average, 4 seats, 45 rounds: **$60/hour, $600/night**.
@@ -198,12 +214,24 @@ sense the edge, 0–1), a **stop-loss** and a **win goal**.
 
 ## 8. Cheats, gaffs and heat
 
-- **Gambler cheats** (layer 0): the **dice slider** (controls one die 1 roll in 4 at a dice table),
-  the **past-poster** (adds to a winning bet after the result), the **team** (three seats at a
-  wheel signaling a dealer on a rival's payroll). Each takes money from the table at a rate shown
-  in the eye-in-the-sky replay. A pit boss spots one with **2% a round** per skill level when
-  watching that table; the eye in the sky lets you review and accuse; a wrong accusation costs
+- **Gambler cheats** (layer 0): the **dice slider** (on 1 roll in 4 at a dice table, re-throws
+  until their bet comes in, up to 6 tries), the **past-poster** (slips a second stake onto every
+  winning bet after the result, so every win pays double), the **team** (three seats at a wheel
+  signaling a dealer on a rival's payroll; M4). Each takes money from the table at a rate shown
+  in the eye-in-the-sky replay. A pit boss spots one with **2% a cheating round** per skill level
+  when watching that table; the eye in the sky lets you review and accuse; a wrong accusation costs
   reputation.
+- *As built in M1* (the slider and the past-poster): a slider on High 8–12 (fair 15/36) wins 55.7%
+  of rolls: 1 − (21/36)^7 on a controlled roll, so +11% a round against the house instead of
+  −16.7%. On Any Seven, 30.5% instead of 16.7%. A past-poster on High at 1:1 is paid 2:1 on wins:
+  +25% a round; on Any Seven (4:1 → 8:1), +50%. A standard pit boss (4% a cheating round) at a
+  full Hi-Lo table sees about 33 posted wins an hour from a past-poster, so spots them within the
+  hour 74% of the time (1 − 0.96^33), the slider (20 controlled rolls an hour) 56%. A cheat
+  who's spotted with **no security free keeps playing**; security walks them out and their
+  winnings tonight return to the cage (+1 word of mouth for a clean house). **Accusing an honest
+  gambler**: they leave and word of mouth takes −2. Cheats arrive at 0.5 a night on night 1,
+  +0.25 a night after; they dress as a tourist (past-poster) or a local (slider), with one tell
+  each (STYLE.md rule 1): a gold pinky ring, a spare chip in the cuff.
 - **Gaffs** (house cheating): shaved dice (moves the 2d6 sum distribution by a chosen bias), a
   wheel brake (one pocket group ×1.5 less likely), a weighted ball. The editor shows true odds
   beside the paytable's apparent odds.
@@ -247,7 +275,8 @@ sense the edge, 0–1), a **stop-loss** and a **win goal**.
 1. **Greedy starter loses:** a bot that never edits a paytable is never ahead of every rival in
    crowd share after night 3 and can't afford the first buyout by night 6. *Slice scale (M1):* the
    greedy bot wins ≤ 20% of 20 seeds and the 8% tuner wins ≥ 35% and at least twice as often.
-   Measured: greedy 3/20, tuner 8/20.
+   Measured: greedy 3/20, tuner 8/20 (stage A); with wages (stage B) greedy 2/20, tuner 8/20
+   once it hires one security guard (6/20 without: the payroll alone costs it two seasons).
 2. **The Sweat matters:** a bot that keeps tonight's Sweat under 5% busts on ≤ 10% of seeds; a bot
    that accepts every whale and ignores the Sweat busts on ≥ 40%.
 3. **Winners are advertising:** an all-15%-edge bot's crowd share is ≥ 30% below an all-5% bot's by

@@ -13,23 +13,25 @@ export interface TableKindDef {
   cost: number;
   /** seat tiles relative to the table's top-left tile, in seat order */
   seats: [number, number][];
+  /** where the dealer stands, relative to the top-left tile */
+  dealer: [number, number];
   derivation: string;
 }
 
 export const TABLE_KINDS: Record<TableKind, TableKindDef> = {
   dice: {
     kind: 'dice', w: 3, h: 2, roundsPerHour: 80, cost: 120000,
-    seats: [[0, -1], [1, -1], [2, -1], [0, 2], [1, 2], [2, 2]],
+    seats: [[0, -1], [1, -1], [2, -1], [0, 2], [1, 2], [2, 2]], dealer: [-1, 0],
     derivation: 'DESIGN.md §3: 6 seats, 80 rounds/hour, 3x2 tiles, $1,200',
   },
   wheel: {
     kind: 'wheel', w: 2, h: 2, roundsPerHour: 45, cost: 150000,
-    seats: [[0, -1], [1, -1], [-1, 1], [2, 1], [0, 2], [1, 2]],
+    seats: [[0, -1], [1, -1], [-1, 1], [2, 1], [0, 2], [1, 2]], dealer: [-1, 0],
     derivation: 'DESIGN.md §3: 6 seats, 45 rounds/hour, 2x2 tiles, $1,500',
   },
   drum: {
     kind: 'drum', w: 3, h: 2, roundsPerHour: 12, cost: 180000,
-    seats: [[0, -1], [1, -1], [2, -1], [-1, 1], [3, 1], [0, 2], [1, 2], [2, 2]],
+    seats: [[0, -1], [1, -1], [2, -1], [-1, 1], [3, 1], [0, 2], [1, 2], [2, 2]], dealer: [-1, 0],
     derivation: 'DESIGN.md §3: 8 seats, 12 draws/hour, 3x2 tiles, $1,800',
   },
 };

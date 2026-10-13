@@ -19,6 +19,10 @@ import type { GameEvent } from '../sim/events';
 import { Game } from '../sim/Game';
 import { betOdds, isGaffed } from '../sim/odds/odds';
 import { sweat, type SweatResult } from '../sim/sweat';
+import { dealerOf, tablePace, wageOf } from '../sim/staff';
+import { stakeFor } from '../sim/settle';
+import { ROLES } from '../data/staff';
+import { CHEATS } from '../data/cheats';
 import type { UI } from '../ui/ui';
 import { SCREEN_H, SCREEN_W } from './screen';
 
@@ -78,6 +82,7 @@ export class FloorScreen {
   private sweatAt = -9999;
   sweat: SweatResult = { p: 0, se: 0, n: 0, topWin: 0 };
   sweatMs = 0;
+  tab: 'table' | 'staff' = 'table';
   /** the win that broke the house, for the count room */
   bust: { owed: number; cage: number; table: number } | null = null;
   sfx: (id: string, v?: number, p?: number) => void = () => {};
@@ -120,7 +125,12 @@ export class FloorScreen {
   /** A number floating up; nudged above any fresh one it would overlap. */
   private float(x: number, y: number, text: string, color: number) {
     if (this.rs.floats.length >= 14) return;
-    for (const f of this.rs.floats) if (f.age < 0.5 && Math.abs(f.x - x) < 24 && Math.abs(f.y - f.age * 14 - y) < 9) y -= 10;
+    // keep nudging up until it clears every fresh one (they all rise at one speed, so the gap holds)
+    for (let moved = true; moved; ) {
+      moved = false;
+      for (const f of this.rs.floats)
+        if (f.age < 0.6 && Math.abs(f.x - x) < 24 && Math.abs(f.y - f.age * 14 - y) < 10) { y = Math.round(f.y - f.age * 14) - 10; moved = true; }
+    }
     this.rs.floats.push({ x, y, text, color, age: 0 });
   }
 
@@ -171,6 +181,20 @@ export class FloorScreen {
         case 'seasonOver':
           this.say(e.reason, e.result === 'won' ? C.gold : C.red);
           break;
+        case 'cheatSpotted': {
+          const boss = g.staff.find((s) => s.id === e.by);
+          const a = g.agents[e.agent];
+          const free = g.staff.some((s) => s.role === 'security' && s.target === a.id);
+          this.say(`${boss ? boss.name : 'The pit'} spots a ${CHEATS[a.cheat!].label.toLowerCase()} at ${g.tables[e.table].game.name}${free ? '.' : ', but nobody is free to walk them out.'}`, C.red);
+          this.sfx('cage');
+          break;
+        }
+        case 'ejected':
+          this.say(`Security walks one out${e.recovered ? `: ${money(e.recovered)} back to the cage` : ''}.`, C.brass);
+          break;
+        case 'accused':
+          if (!e.guilty) this.say('An honest gambler, accused. The strip will hear about it.', C.red);
+          break;
       }
     }
     for (const [t, cents] of small) {
@@ -199,6 +223,19 @@ export class FloorScreen {
     this.refreshSweat();
 
     drawFloor(ctx, g, this.view, g.nightOver || g.busted ? 1 : alpha, this.rs, { w: PANEL_X, h: SCREEN_H });
+    // gamblers: click to inspect (they sit in front of the tables, so they take the click first)
+    if (ui.clicked && g.phase === 'night') {
+      for (let i = g.agents.length - 1; i >= 0; i--) {
+        const a = g.agents[i];
+        if (a.phase === 'gone') continue;
+        const sx = this.view.ox + Math.round(a.x / SUB), sy = this.view.oy + Math.round(a.y / SUB);
+        if (ui.hover(sx - 6, sy - 20, 12, 21)) {
+          this.rs.selectedAgent = a.id;
+          ui.eat();
+          break;
+        }
+      }
+    }
     // tables: click to select; the selected one outlined in gold; red when one win could bust the cage
     g.tables.forEach((t, i) => {
       const r = tableRect(t, this.view);
@@ -209,6 +246,8 @@ export class FloorScreen {
       else if (ui.hover(r.x, r.y, r.w, r.h)) outlineRect(ctx, r, C.chalk);
       if (ui.hover(r.x, r.y, r.w, r.h) && ui.clicked) {
         this.selected = i;
+        this.tab = 'table';
+        this.rs.selectedAgent = -1;
         ui.eat();
       }
       if (danger && ui.hover(r.x, r.y, r.w, r.h)) ui.tip([{ text: `One max bet on its top payout wins ${money(Math.floor((t.max * top) / 10))}: more than the cage holds.`, color: C.red }]);
@@ -216,8 +255,9 @@ export class FloorScreen {
     this.ticker.forEach((l, i) => ui.text(l.text, 8, SCREEN_H - 12 - (this.ticker.length - 1 - i) * 10, l.color, { shadow: C.ink }));
 
     this.topBar(ui);
-    this.tablePanel(ui, g.tables[this.selected]);
+    this.rightPanel(ui);
     this.cagePanel(ui);
+    this.gamblerCard(ui);
     if (g.result !== 'playing') this.resultPanel(ui);
     else if (g.phase === 'day') this.dayPanel(ui);
   }
@@ -241,17 +281,27 @@ export class FloorScreen {
     ui.text(`Word of mouth ${(g.wom / 1000).toFixed(1)}`, 634, 4, C.sky, { align: 'right' });
   }
 
-  private tablePanel(ui: UI, t: Game['s']['tables'][number]) {
-    const x = PANEL_X, w = PANEL_W;
-    let y = TOP + 2;
+  /** The right panel: the selected table, or the staff, behind two tabs. */
+  private rightPanel(ui: UI) {
+    const x = PANEL_X, w = PANEL_W, y = TOP + 2;
     ui.panel(x, y, w - 2, 178, 'felt');
+    if (ui.button('tab-table', x + 4, y + 3, 50, 11, 'Table', { active: this.tab === 'table' })) this.tab = 'table';
+    if (ui.button('tab-staff', x + 56, y + 3, 50, 11, 'Staff', { active: this.tab === 'staff' })) this.tab = 'staff';
+    if (this.tab === 'table') this.tablePanel(ui, this.game.s.tables[this.selected], y + 14);
+    else this.staffPanel(ui, y + 16);
+  }
+
+  private tablePanel(ui: UI, t: Game['s']['tables'][number], top: number) {
+    const g = this.game.s, x = PANEL_X, w = PANEL_W;
+    let y = top;
     ui.text(t.game.name, x + 6, y + 5, C.gold);
-    const k = TABLE_KINDS[t.kind];
     const r = t.game.randomizer;
     const what = r.kind === 'dice' ? `${r.count}d${r.faces}` : r.kind === 'wheel' ? `${r.pockets.length} pockets` : `${r.balls} balls, ${r.drawn} drawn`;
-    ui.text(`${what}, ${k.roundsPerHour} rounds/hr`, x + 6, y + 15, C.steel);
+    const dealer = dealerOf(g, t.id);
+    ui.text(`${what}, ${tablePace(g, t)} rounds/hr`, x + 6, y + 15, C.steel);
+    ui.text(dealer ? dealer.name.split(' ')[0] : 'no dealer', x + w - 8, y + 15, dealer ? C.steel : C.red, { align: 'right' });
     if (isGaffed(t.game)) ui.text('GAFFED', x + w - 8, y + 5, C.red, { align: 'right' });
-    y += 28;
+    y += 27;
     ui.text('Bet', x + 6, y, C.slate);
     ui.text('Pays', x + 72, y, C.slate);
     ui.text('Edge', x + 112, y, C.slate);
@@ -286,9 +336,75 @@ export class FloorScreen {
     ui.text(`Seats ${seated}/${t.seats.length}   rounds ${t.rounds}`, x + 6, y, C.steel);
     y += 10;
     ui.text(`Tonight ${money(t.net, true)} on ${money(t.handle)} bet`, x + 6, y, t.net >= 0 ? C.leaf : C.red);
-    y += 13;
-    if (ui.button('open', x + 6, y, 60, 12, t.open ? 'Close table' : 'Open table')) this.order({ t: t.open ? 'closeTable' : 'openTable', table: t.id });
-    if (ui.button('whale', x + 70, y, 98, 12, 'Send in a whale', { tip: 'Debug: a high roller walks in now.' })) this.order({ t: 'spawn', type: 'highRoller' });
+    y += 12;
+    if (ui.button('open', x + 6, y, 60, 12, t.open ? 'Close table' : 'Open table', { disabled: !t.open && !dealer, tip: !dealer ? 'Assign a dealer on the Staff tab first.' : undefined })) this.order({ t: t.open ? 'closeTable' : 'openTable', table: t.id });
+    if (ui.button('whale', x + 70, y, 98, 12, 'Send in a whale', { disabled: g.phase !== 'night', tip: 'Debug: a high roller walks in now.' })) this.order({ t: 'spawn', type: 'highRoller' });
+  }
+
+  /** The roster, what each does tonight, and (by day) the hiring hall. */
+  private staffPanel(ui: UI, top: number) {
+    const g = this.game.s, x = PANEL_X, w = PANEL_W;
+    let y = top;
+    const sel = g.tables[this.selected];
+    for (const s of g.staff) {
+      ui.text(`${ROLES[s.role].label[0]}${'*'.repeat(s.skill)}`, x + 6, y, s.skill === 3 ? C.gold : s.skill === 1 ? C.steel : C.chalk);
+      ui.text(s.name, x + 28, y, C.chalk);
+      let job = '';
+      if (s.role === 'dealer') job = s.table >= 0 ? g.tables[s.table].kind : 'off';
+      else if (s.role === 'pitBoss') job = s.watch.length ? `${s.watch.length} tbl` : 'idle';
+      else if (s.role === 'security') job = s.target >= 0 ? 'busy' : 'door';
+      else job = 'cage';
+      ui.text(job, x + 98, y, C.steel);
+      if (ui.hover(x + 4, y - 1, 120, 10))
+        ui.tip([
+          { text: `${s.name}, ${ROLES[s.role].label.toLowerCase()} (${['green', 'standard', 'veteran'][s.skill - 1]})`, color: C.gold },
+          { text: `${money(wageOf(s))} a night.` },
+          { text: s.role === 'dealer' ? 'Sets the table\'s pace: x0.8 green, x1 standard, x1.25 veteran.' : s.role === 'pitBoss' ? 'Spots a cheating round 2% of the time per level, at up to 3 tables.' : s.role === 'security' ? 'Walks a spotted or accused cheat out. Their winnings come back to the cage.' : 'The cage needs one to open the doors.' },
+        ], 170);
+      // one action a row: deal / watch the selected table, or fire (by day)
+      if (s.role === 'dealer' && ui.button(`deal${s.id}`, x + w - 40, y - 2, 32, 11, s.table === sel.id ? 'here' : 'deal', { active: s.table === sel.id, tip: `Deal ${sel.game.name} (the selected table).` })) this.order({ t: 'assign', staff: s.id, table: s.table === sel.id ? -1 : sel.id });
+      if (s.role === 'pitBoss' && ui.button(`watch${s.id}`, x + w - 40, y - 2, 32, 11, 'watch', { active: s.watch.includes(sel.id), tip: `Watch / stop watching ${sel.game.name}.` })) this.order({ t: 'assign', staff: s.id, table: sel.id });
+      if (g.phase === 'day' && s.role !== 'dealer' && s.role !== 'pitBoss' && ui.button(`fire${s.id}`, x + w - 40, y - 2, 32, 11, 'fire', { tip: 'Let them go (by day).' })) this.order({ t: 'fire', staff: s.id });
+      y += 11;
+    }
+    if (g.phase === 'day') {
+      y += 3;
+      ui.text('The hiring hall', x + 6, y, C.gold);
+      y += 11;
+      for (const c of g.hall) {
+        ui.text(`${ROLES[c.role].label} ${'*'.repeat(c.skill)}`, x + 6, y, C.chalk);
+        ui.text(money(wageOf(c)), x + 102, y, C.steel);
+        if (ui.button(`hire${c.id}`, x + w - 40, y - 2, 32, 11, 'hire', { tip: `${c.name}: ${money(wageOf(c))} a night.` })) this.order({ t: 'hire', candidate: c.id });
+        y += 11;
+      }
+    } else {
+      y += 3;
+      ui.para('Click a gambler on the floor to look them over. Security walks out anyone you accuse.', x + 6, y, w - 14, C.slate);
+    }
+  }
+
+  /** The gambler you clicked: who they are, how they're doing, and the accusation. */
+  private gamblerCard(ui: UI) {
+    const g = this.game.s, id = this.rs.selectedAgent;
+    const a = id >= 0 ? g.agents[id] : undefined;
+    if (!a || a.phase === 'gone' || g.phase !== 'night') return;
+    const x = 4, y = 40, w = 90;
+    ui.panel(x, y, w, 100, 'dark');
+    ui.text(GAMBLER_TYPES[a.type].label, x + 5, y + 5, C.gold);
+    const net = a.bankroll - a.start;
+    ui.text(`${net >= 0 ? 'up' : 'down'} ${money(Math.abs(net))}`, x + 5, y + 16, net >= 0 ? C.leaf : C.red);
+    let yy = y + 27;
+    if (a.table >= 0) {
+      const t = g.tables[a.table];
+      yy += ui.para(`${t.game.bets[a.bet].label} at ${t.game.name}, ${money(stakeFor(a.baseBet, a.bankroll, t.min, t.max))} a round`, x + 5, yy, w - 10, C.chalk);
+    } else yy += ui.para(a.phase === 'leave' ? 'Heading out.' : 'Looking for a seat.', x + 5, yy, w - 10, C.chalk);
+    if (a.spotted) ui.text('SPOTTED CHEATING', x + 5, yy + 2, C.red);
+    const hasSecurity = g.staff.some((s) => s.role === 'security');
+    if (a.phase !== 'leave' && ui.button('accuse', x + 5, y + 100 - 17, w - 10, 12, a.spotted ? 'Walk them out' : 'Accuse', {
+      disabled: !hasSecurity,
+      tip: !hasSecurity ? 'You need security on staff (hire by day).' : a.spotted ? 'Security walks them out; their winnings come back.' : 'If they are cheating, security walks them out. If not, the strip hears you rough up an honest gambler (-2 word of mouth).',
+    })) this.order({ t: 'accuse', agent: a.id });
+    if (ui.button('close-card', x + w - 14, y + 2, 11, 11, 'x')) this.rs.selectedAgent = -1;
   }
 
   private cagePanel(ui: UI) {

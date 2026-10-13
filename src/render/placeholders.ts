@@ -3,6 +3,7 @@
 // placeholders they keep the readability rules: each gambler type has its own silhouette and colors.
 import { C } from '../data/palette';
 import type { GamblerType } from '../data/gamblers';
+import type { Role } from '../data/staff';
 import { defSprite } from './atlas';
 import { disc, ellipse, px, rect } from './pixel';
 
@@ -180,7 +181,49 @@ function entrance() {
   };
 }
 
+/** Staff, 12x20 like the gamblers (feet at (6, 19)): each role its own uniform. */
+const STAFF_LOOKS: Record<Role, { shirt: number; trim: number; legs: number; hair: number; skin: number; hat?: number }> = {
+  dealer: { shirt: C.white, trim: C.ink, legs: C.ink, hair: C.umber, skin: C.peach },
+  pitBoss: { shirt: C.slate, trim: C.gold, legs: C.navy, hair: C.steel, skin: C.tan },
+  security: { shirt: C.crimson, trim: C.brass, legs: C.ink, hair: C.ink, skin: C.clay },
+  cashier: { shirt: C.moss, trim: C.chalk, legs: C.navy, hair: C.walnut, skin: C.peach, hat: C.leaf },
+};
+
+function staffSprite(role: Role, dir: Dir, walk: number) {
+  const L = STAFF_LOOKS[role];
+  return {
+    w: 12, h: 20, ox: 6, oy: 19,
+    draw: (ctx: CanvasRenderingContext2D) => {
+      const swing = walk === 1 ? 1 : walk === 3 ? -1 : 0;
+      rect(ctx, 3, 14, 6, 5, C.ink);
+      rect(ctx, 4, 14, 2, 4 + (swing > 0 ? 0 : 1), L.legs);
+      rect(ctx, 6, 14, 2, 4 + (swing < 0 ? 0 : 1), L.legs);
+      rect(ctx, 2, 7, 8, 8, C.ink);
+      rect(ctx, 3, 8, 6, 6, L.shirt);
+      if (dir !== 'u') {
+        if (role === 'dealer') { rect(ctx, 4, 8, 1, 6, C.ink); rect(ctx, 7, 8, 1, 6, C.ink); rect(ctx, 5, 8, 2, 1, C.red); }
+        if (role === 'pitBoss') { rect(ctx, 5, 8, 2, 5, C.white); px(ctx, 5, 9, C.red); px(ctx, 3, 9, L.trim); }
+        if (role === 'security') { rect(ctx, 3, 9, 1, 1, L.trim); rect(ctx, 5, 8, 2, 6, C.ink); }
+        if (role === 'cashier') rect(ctx, 3, 11, 6, 1, L.trim);
+      }
+      rect(ctx, 1, 8, 2, 5, C.ink);
+      rect(ctx, 9, 8, 2, 5, C.ink);
+      px(ctx, 1, 12, L.skin);
+      px(ctx, 10, 12, L.skin);
+      rect(ctx, 3, 1, 6, 7, C.ink);
+      rect(ctx, 4, 2, 4, 5, L.skin);
+      rect(ctx, 4, 1, 4, 2, L.hair);
+      if (dir === 'u') rect(ctx, 4, 2, 4, 4, L.hair);
+      else if (dir === 'd') { px(ctx, 5, 4, C.ink); px(ctx, 7, 4, C.ink); }
+      else { px(ctx, dir === 'l' ? 4 : 7, 4, C.ink); rect(ctx, dir === 'l' ? 7 : 4, 2, 1, 3, L.hair); }
+      if (L.hat !== undefined) rect(ctx, 3, 1, 6, 1, L.hat);
+    },
+  };
+}
+
 export function definePlaceholders() {
+  for (const role of Object.keys(STAFF_LOOKS) as Role[])
+    for (const dir of DIRS) for (let f = 0; f < 4; f++) defSprite(`staff:${role}:${dir}:${f}`, staffSprite(role, dir, f));
   for (const type of Object.keys(LOOKS) as GamblerType[])
     for (const dir of DIRS) {
       for (let f = 0; f < 4; f++) defSprite(`gambler:${type}:${dir}:${f}`, gambler(type, dir, f, false));
@@ -205,5 +248,6 @@ export function spriteNames(): string[] {
   for (let v = 0; v < 4; v++) names.push(`floor:sawdust:${v}`);
   for (let f = 0; f < 8; f++) names.push(`table:wheel:${f}`);
   names.push('table:dice', 'table:drum', 'fixture:cage', 'fixture:bar', 'fixture:entrance');
+  for (const role of Object.keys(STAFF_LOOKS)) for (const dir of DIRS) for (let f = 0; f < 4; f++) names.push(`staff:${role}:${dir}:${f}`);
   return names;
 }

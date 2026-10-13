@@ -17,7 +17,7 @@ await step(page, Math.round(2.5 * H), 0.5);
 await shot('m0-floor-night');
 
 // the editor: hover Any Seven on Hi-Lo for its odds
-const [bx, by] = await toPage(page, 470, 18 + 28 + 11 + 2 * 11 + 3);
+const [bx, by] = await toPage(page, 470, 18 + 14 + 27 + 11 + 2 * 11 + 3);
 await page.mouse.move(bx, by);
 await step(page, 0, 0.5);
 await shot('m0-editor-odds');

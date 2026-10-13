@@ -2,11 +2,11 @@
 // rest of tonight `n` times with the live bet-resolution code (odds `sample` and `ret`, `settle`),
 // so it busts exactly when the floor would. Milestone 0 holds tonight's seated crowd fixed: every
 // gambler in a seat now keeps their bet until 6am (the arrival forecast arrives with M1).
-import { TABLE_KINDS } from '../data/tables';
 import { NIGHT_TICKS, TIME } from '../data/time';
 import { Rng } from '../engine/rng';
 import { compile, type Compiled } from './odds/odds';
 import { settle, stakeFor } from './settle';
+import { tablePace } from './staff';
 import { nightTick, type GameState } from './state';
 
 export interface SweatResult {
@@ -91,7 +91,8 @@ export function sweat(g: GameState, n: number, seed: number, exact = false): Swe
     tables.push(plan);
     if (!bets.length) continue;
     // the same accumulator the table system steps: a round each time it passes ticksPerHour
-    const rph = TABLE_KINDS[t.kind].roundsPerHour;
+    const rph = tablePace(g, t);
+    if (rph <= 0) continue;
     for (let k = 1; ; k++) {
       const at = Math.ceil((k * TIME.ticksPerHour - t.acc) / rph) - 1;
       if (at >= left) break;

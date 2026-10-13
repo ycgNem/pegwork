@@ -11,6 +11,8 @@ import type { GameEvent } from './events';
 import type { GameState } from './state';
 import { beginNight, seedRival } from './season';
 import { UNDERCUTTER } from '../data/strip';
+import { STAFF, STARTING_STAFF } from '../data/staff';
+import { makeStaff, rollHall } from './staff';
 import { clockSystem } from './systems/clock';
 import { commandSystem } from './systems/commands';
 import { arrivalSystem } from './systems/arrivals';
@@ -79,6 +81,10 @@ export class Game {
         id: 'undercutter', edge: UNDERCUTTER.edge, reputation: UNDERCUTTER.reputation * 1000, cash: UNDERCUTTER.cash,
         profits: [], share: 0, buffet: false, lastMove: null, rng: new Rng(hashStr(`rival:${opts.seed}`)), bought: false,
       },
+      staff: [],
+      nextStaff: 0,
+      hall: [],
+      staffRng: new Rng(hashStr(`staff:${opts.seed}`)),
       result: 'playing',
       lostReason: '',
       history: [],
@@ -103,9 +109,19 @@ export class Game {
       log: [],
       now: [],
       settle: [],
+      cheatRounds: [],
       stats: { arrived: 0, left: 0, leftUp: 0, leftBroke: 0, rounds: 0, handle: 0, net: 0 },
     };
     seedRival(this.s);
+    // the opening staff: dealers on the first tables, the pit boss watching them (DESIGN.md §4)
+    let dealt = 0;
+    for (const m of STARTING_STAFF.members) {
+      const s = makeStaff(this.s, m.role, m.skill);
+      if (s.role === 'dealer') s.table = dealt < this.s.tables.length ? dealt++ : -1;
+      if (s.role === 'pitBoss') s.watch = this.s.tables.slice(0, STAFF.pitTables).map((t) => t.id);
+      this.s.staff.push(s);
+    }
+    rollHall(this.s);
     if (opts.open) {
       beginNight(this.s);
       this.s.now = [];
@@ -171,6 +187,9 @@ export class Game {
     const r = g.rival;
     w(Math.round(r.edge * 1e6)); w(r.reputation); big(r.cash + 2 ** 40); w(r.share); w(r.buffet ? 1 : 0); w(r.rng.s); w(r.bought ? 1 : 0);
     for (const p of r.profits) big(p + 2 ** 40);
+    w(g.staffRng.s); w(g.nextStaff);
+    for (const s of g.staff) { w(s.id); w(s.skill); w(s.table); w(s.x); w(s.y); w(s.target); for (const t of s.watch) w(t); }
+    for (const s of g.hall) w(s.id);
     for (const t of g.tables) {
       w(t.rng.s); w(t.acc); w(t.open ? 1 : 0); w(t.min); w(t.max); w(t.rounds); big(t.handle); big(t.net + 2 ** 40);
       for (const s of t.seats) w(s);
@@ -178,6 +197,7 @@ export class Game {
     const PH = { choose: 0, walk: 1, seated: 2, leave: 3, gone: 4 };
     for (const a of g.agents) {
       w(a.id); w(a.x); w(a.y); w(PH[a.phase]); big(a.bankroll); w(a.table); w(a.seat); w(a.bet); w(a.patience); w(a.waited);
+      w(a.cheat ? 1 + (a.cheat === 'slider' ? 0 : 1) : 0); w(a.spotted ? 1 : 0); w(a.ejected ? 1 : 0);
     }
     for (const d of g.deliveries) { w(d.tick); big(d.cents); }
     return h >>> 0;

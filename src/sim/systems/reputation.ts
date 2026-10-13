@@ -14,7 +14,7 @@ export const WOM = {
 
 export function reputationSystem(g: GameState) {
   for (const e of g.now) {
-    if (e.t !== 'left') continue;
+    if (e.t !== 'left' || e.quiet) continue;
     const wom = GAMBLER_TYPES[e.type].wom;
     if (e.net * 1000 >= e.start * WOM.upShare) {
       g.wom += wom;

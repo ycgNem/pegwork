@@ -1,6 +1,7 @@
 // How a free gambler picks a table and a bet (DESIGN.md §5): every open table with a free seat is
 // scored by the gambler's favorite bet there, then one is drawn by a seeded softmax.
 import { CHOICE } from '../data/gamblers';
+import { CHEATS } from '../data/cheats';
 import { betOdds } from './odds/odds';
 import { flowField, seatTile, tileOf, walkTiles } from './floor';
 import type { Gambler, GameState } from './state';
@@ -23,6 +24,7 @@ export function chooseTable(g: GameState, a: Gambler): Pick | null {
   const options: { pick: Pick; score: number }[] = [];
   for (const table of g.tables) {
     if (!table.open || a.bankroll < table.min) continue;
+    if (a.cheat && !CHEATS[a.cheat].tables.includes(table.kind)) continue;
     const seat = table.seats.indexOf(-1);
     if (seat < 0) continue;
     const [sx, sy] = seatTile(table, seat);

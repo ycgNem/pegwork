@@ -77,3 +77,37 @@ export function nextStep(g: GameState, f: Int16Array, x: number, y: number): [nu
 
 /** Manhattan walk in tiles (for the choice formula's walk cost). */
 export const walkTiles = (f: Int16Array, w: number, x: number, y: number) => f[y * w + x];
+
+/** Anything that walks the floor: a position and a target tile, 1/16 px. */
+export interface Mover { x: number; y: number; tx: number; ty: number }
+
+const toward = (v: number, goal: number, step: number) => (v < goal ? Math.min(goal, v + step) : Math.max(goal, v - step));
+
+/** Move one tick along the flow field toward (tx, ty); true when standing on its center. */
+export function walkTo(g: GameState, a: Mover, speed: number): boolean {
+  const cx = tileOf(a.x), cy = tileOf(a.y);
+  const gx = center(a.tx), gy = center(a.ty);
+  if (cx === a.tx && cy === a.ty) {
+    a.x = toward(a.x, gx, speed);
+    a.y = toward(a.y, gy, speed);
+    return a.x === gx && a.y === gy;
+  }
+  const f = flowField(g, a.tx, a.ty);
+  const next = nextStep(g, f, cx, cy);
+  if (!next) {
+    // off the field (the floor changed under them): step straight there
+    a.x = gx;
+    a.y = gy;
+    return true;
+  }
+  const [nx, ny] = next;
+  // axis-aligned: line up on the current tile's center across the direction of travel first
+  if (nx !== cx) {
+    if (a.y !== center(cy)) a.y = toward(a.y, center(cy), speed);
+    else a.x = toward(a.x, center(nx), speed);
+  } else {
+    if (a.x !== center(cx)) a.x = toward(a.x, center(cx), speed);
+    else a.y = toward(a.y, center(ny), speed);
+  }
+  return false;
+}

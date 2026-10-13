@@ -2,6 +2,7 @@
 // needs; the floor, staff, crowd, gaff, web and buyout commands arrive with Milestone 1.
 import type { GameDef } from '../data/games';
 import type { GamblerType } from '../data/gamblers';
+import type { CheatKind } from '../data/cheats';
 
 export type Command =
   | { t: 'openTable'; table: number }
@@ -16,7 +17,14 @@ export type Command =
   /** the armored car: cents from the bank to the cage, arriving in an hour */
   | { t: 'callArmoredCar'; cents: number }
   /** debug floor only: a gambler of this type walks in now */
-  | { t: 'spawn'; type: GamblerType }
+  | { t: 'spawn'; type: GamblerType; cheat?: CheatKind }
+  /** day: hire a candidate from today's hall */
+  | { t: 'hire'; candidate: number }
+  | { t: 'fire'; staff: number }
+  /** a dealer to a table (-1: off the floor); a pit boss watches / stops watching a table */
+  | { t: 'assign'; staff: number; table: number }
+  /** night: have security walk this gambler out as a cheat */
+  | { t: 'accuse'; agent: number }
   /** day: open tonight's doors */
   | { t: 'openDoors' }
   /** day: move cash between the bank and the cage at once (positive: into the cage) */

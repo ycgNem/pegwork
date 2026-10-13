@@ -7,7 +7,8 @@ import { C, PALETTE } from '../data/palette';
 import { TABLE_KINDS } from '../data/tables';
 import { SUB } from '../sim/floor';
 import { compile } from '../sim/odds/odds';
-import type { Gambler, GameState, TableState } from '../sim/state';
+import type { Gambler, GameState, StaffMember, TableState } from '../sim/state';
+import { dealerTile } from '../sim/staff';
 import { drawSprite, hasImage, sprite } from './atlas';
 import { px, rect } from './pixel';
 import type { Dir } from './placeholders';
@@ -27,6 +28,8 @@ export class FloorRenderState {
   spinAt = new Map<number, number>();
   floats: Floater[] = [];
   time = 0;
+  /** the gambler the owner clicked, or -1 */
+  selectedAgent = -1;
 }
 
 const WALL = 8;
@@ -78,6 +81,38 @@ function drawTable(ctx: CanvasRenderingContext2D, g: GameState, t: TableState, v
   }
 }
 
+/** Where a staff member stands tonight (floor px, feet), or null when off the floor. */
+function staffSpot(g: GameState, s: StaffMember, alpha: number): { x: number; y: number; dir: Dir; moving: boolean } | null {
+  const c = (t: number) => t * TILE + TILE / 2;
+  if (s.role === 'dealer') {
+    if (s.table < 0) return null;
+    const [x, y] = dealerTile(g.tables[s.table]);
+    return { x: c(x), y: c(y) + 4, dir: 'r', moving: false };
+  }
+  if (s.role === 'pitBoss') {
+    const ts = s.watch.map((i) => g.tables[i]).filter(Boolean);
+    if (!ts.length) return null;
+    // between the tables it watches, a little below them
+    const mx = ts.reduce((n, t) => n + t.x + TABLE_KINDS[t.kind].w / 2, 0) / ts.length;
+    const my = Math.max(...ts.map((t) => t.y + TABLE_KINDS[t.kind].h)) + 1.5;
+    return { x: Math.round(mx * TILE), y: Math.round(my * TILE), dir: 'u', moving: false };
+  }
+  if (s.role === 'cashier') {
+    const cage = g.floor.fixtures.find((f) => f.kind === 'cage');
+    return cage ? { x: (cage.x + cage.w / 2) * TILE, y: cage.y * TILE + 14, dir: 'd', moving: false } : null;
+  }
+  const ix = s.px + (s.x - s.px) * alpha, iy = s.py + (s.y - s.py) * alpha;
+  const dx = s.x - s.px, dy = s.y - s.py;
+  const dir: Dir = dx || dy ? (Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'r' : 'l') : dy > 0 ? 'd' : 'u') : 'd';
+  return { x: Math.round(ix / SUB), y: Math.round(iy / SUB), dir, moving: !!(dx || dy) };
+}
+
+function drawStaff(ctx: CanvasRenderingContext2D, s: StaffMember, v: FloorView, at: { x: number; y: number; dir: Dir; moving: boolean }, rs: FloorRenderState) {
+  const f = at.moving ? Math.floor(rs.time * 10 + s.id) % 4 : 0;
+  rect(ctx, v.ox + at.x - 4, v.oy + at.y, 8, 1, C.umber);
+  drawSprite(ctx, sprite(`staff:${s.role}:${at.dir}:${f}`), v.ox + at.x, v.oy + at.y);
+}
+
 function drawGambler(ctx: CanvasRenderingContext2D, g: GameState, a: Gambler, v: FloorView, alpha: number, rs: FloorRenderState) {
   const ix = a.px + (a.x - a.px) * alpha, iy = a.py + (a.y - a.py) * alpha;
   const sx = Math.round(v.ox + ix / SUB), sy = Math.round(v.oy + iy / SUB);
@@ -88,12 +123,45 @@ function drawGambler(ctx: CanvasRenderingContext2D, g: GameState, a: Gambler, v:
   rs.facing.set(a.id, dir);
   // a soft shadow under the feet
   rect(ctx, sx - 4, sy, 8, 1, C.umber);
-  if (a.phase === 'seated') drawSprite(ctx, sprite(`gambler:${a.type}:sit:${dir}`), sx, sy + (dir === 'd' ? 4 : 0));
+  const seatedDown = a.phase === 'seated' && dir === 'd' ? 4 : 0;
+  if (a.phase === 'seated') drawSprite(ctx, sprite(`gambler:${a.type}:sit:${dir}`), sx, sy + seatedDown);
   else {
     const moving = dx !== 0 || dy !== 0;
     const f = moving ? Math.floor(rs.time * 8 + a.id) % 4 : 0;
     drawSprite(ctx, sprite(`gambler:${a.type}:${dir}:${f}`), sx, sy);
   }
+  // a cheat's one tell (STYLE.md rule 1): the slider's gold pinky ring, the past-poster's spare chip in the cuff
+  if (a.cheat && dir !== 'u') px(ctx, sx + (a.cheat === 'slider' ? -5 : 4), sy - 7 + seatedDown + (a.phase === 'seated' ? 3 : 0), a.cheat === 'slider' ? C.gold : C.cyan);
+  // where the owner's marks go, drawn on top of everything once the floor is down
+  // (a gambler seated with their back to us has the table above them: their marks go under their feet)
+  if (a.spotted || rs.selectedAgent === a.id)
+    marks.push({ a, x: sx, top: sy - 21 + seatedDown + (a.phase === 'seated' ? 3 : 0), feet: sy, below: a.phase === 'seated' && dir === 'u' });
+}
+
+const marks: { a: Gambler; x: number; top: number; feet: number; below: boolean }[] = [];
+
+/** Spotted cheats get a red '!', the gambler the owner clicked a gold chevron; both ink-outlined. */
+function drawMarks(ctx: CanvasRenderingContext2D, rs: FloorRenderState) {
+  for (const { a, x, top, feet, below } of marks) {
+    if (below) {
+      // a chevron pointing up at them, the '!' beside it
+      const y = feet + 3;
+      if (rs.selectedAgent === a.id) {
+        rect(ctx, x - 2, y - 1, 5, 2, C.ink); rect(ctx, x - 3, y + 1, 7, 1, C.ink); rect(ctx, x - 4, y + 2, 9, 2, C.ink);
+        px(ctx, x, y, C.gold); rect(ctx, x - 2, y + 1, 5, 1, C.gold); rect(ctx, x - 3, y + 2, 7, 1, C.gold);
+      }
+      if (a.spotted) drawText(ctx, '!', x + 6, y - 2, PALETTE[C.red], 1, PALETTE[C.ink]);
+      continue;
+    }
+    let y = top - 1;
+    if (rs.selectedAgent === a.id) {
+      rect(ctx, x - 4, y - 5, 9, 2, C.ink); rect(ctx, x - 3, y - 3, 7, 1, C.ink); rect(ctx, x - 2, y - 2, 5, 2, C.ink);
+      rect(ctx, x - 3, y - 4, 7, 1, C.gold); rect(ctx, x - 2, y - 3, 5, 1, C.gold); px(ctx, x, y - 2, C.gold);
+      y -= 6;
+    }
+    if (a.spotted) drawText(ctx, '!', x - 1, y - 9, PALETTE[C.red], 1, PALETTE[C.ink]);
+  }
+  marks.length = 0;
 }
 
 /** The street and the marquee out front: the neon sign over the door. */
@@ -151,6 +219,10 @@ export function drawFloor(ctx: CanvasRenderingContext2D, g: GameState, v: FloorV
     if (a.phase === 'gone') continue;
     items.push({ y: a.y / SUB, draw: () => drawGambler(ctx, g, a, v, alpha, rs) });
   }
+  if (g.phase === 'night') for (const s of g.staff) {
+    const at = staffSpot(g, s, alpha);
+    if (at) items.push({ y: at.y, draw: () => drawStaff(ctx, s, v, at, rs) });
+  }
   items.sort((a, b) => a.y - b.y);
   for (const it of items) it.draw();
 
@@ -160,6 +232,8 @@ export function drawFloor(ctx: CanvasRenderingContext2D, g: GameState, v: FloorV
     const tw = textWidth(f.text);
     drawText(ctx, f.text, Math.round(f.x - tw / 2), yy, PALETTE[f.color], 1, PALETTE[C.ink]);
   }
+  // the owner's marks last: nothing on the floor covers a spotted cheat
+  drawMarks(ctx, rs);
 }
 
 /** Screen rect of a table (for clicks and outlines). */

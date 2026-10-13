@@ -9,15 +9,21 @@ is built: the 640x360 screen, the exact odds calculator, the floor sim with gamb
 walk, bet and leave, the cage and busting, the Sweat, the debug floor, the art-direction test
 sprites, the four agents, 38 tests, the e2e scripts.
 
-- **Pushed** to `main`: https://ycgnem.github.io/pegwork/ shows the debug floor.
-- **Now: Milestone 1, the slice** (ROADMAP.md), approved by the owner (DECISIONS #38).
+- **Pushed** to `main`: https://ycgnem.github.io/pegwork/ shows the M0 debug floor (stages A
+  and B are committed locally, not pushed; push when the owner says).
+- **Now: Milestone 1, the slice** (ROADMAP.md), approved by the owner (DECISIONS #38). Done:
+  stage A (the season, crowd share, the Undercutter, the buyout; #39–#42) and stage B (staff
+  and cheats; #43–#45). **Next: stage C**: the shaved-dice gaff, Heat, the inspector and the raid,
+  pace test §11.4. Then D (whales with demands, the Sweat's arrival forecast; §11.2, §11.7),
+  E (place/move/sell on the floor, the full game editor), F (the Web fragment: Bookmaker, 30
+  nodes, 3 Specials, 1 House Rule, Know-How), G (title, results, settings, lesson cards,
+  indie-critic review).
 
 **Settled with the owner:** chibi proportions, Endesga 32 (#38). Still unanswered from the
 re-plan: anything in PLAN.md to cut.
 
-**M1 must fix first** (DESIGN §4, DECISIONS #36): a starter night earns +$3,004, not +$900, and the
-greedy starter games don't cost the crowd yet. Rebalance tourist stop-losses, the word-of-mouth
-penalty and the buyout prices before pace test §11.1 can pass.
+The M0 balance problem (#36) is fixed by #40–#42: pace test §11.1 passes (greedy 2/20, tuner
+8/20 with wages).
 
 ## Publishing and identity
 
@@ -46,7 +52,8 @@ penalty and the buyout prices before pace test §11.1 can pass.
   `commands.ts`, `events.ts`, `state.ts`, `systems/` (one per file), `odds/` (`odds.ts` compile,
   `sample`, `ret`, `betOdds`; `rational.ts`), `settle.ts` (the one place money moves),
   `choice.ts` (how a gambler picks), `floor.ts` (walkable grid, seats, flow fields), `sweat.ts`.
-- `src/data/`: `time`, `games`, `tables`, `gamblers`, `economy`, `floor`, `palette`. Every record
+- `src/data/`: `time`, `games`, `tables`, `gamblers`, `economy`, `floor`, `strip`, `staff`,
+  `cheats`, `palette`. Every record
   has a `derivation` naming a DESIGN.md section (tests/data.test.ts enforces it).
 - `src/app/`: `app.ts` (loop, input, audio, `window.__app` for e2e), `floorScreen.ts` (the debug
   floor; `screen.order(cmd)`, `screen.tick()`), `screen.ts` (scaler), `settings.ts`.
@@ -65,3 +72,7 @@ penalty and the buyout prices before pace test §11.1 can pass.
   payout), so a full wheel swings hard. That's real, and M1's balance should keep it visible.
 - `mirror_x` in pixel-art-studio copies half a sprite; flip a cel for left/right facing.
 - The other game folders in Documents are read-only for this project.
+- `assign` is a toggle for pit bosses (watch / stop watching a table) and a move for dealers
+  (table -1 takes them off the floor); the generic table check in `systems/commands.ts` skips it.
+- The e2e `cheat-spotted` screen holds security back (role swapped for the loop) so the spotted
+  cheat is still seated for the shot.

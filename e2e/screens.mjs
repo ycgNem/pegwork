@@ -58,9 +58,22 @@ const order = (cmd) => page.evaluate((c) => window.__app.screen.order(c), cmd);
 const SC = {
   'day-1': async () => { await page.mouse.move(1, 1); },
   'day-1-buy-tip': async () => { const [x, y] = await toPage(page, 82 + 300 - 60, 70 + 22 + 10 + 10 + 14 + 3); await page.mouse.move(x, y); },
-  'floor-open': async () => { await page.mouse.move(1, 1); await order({ t: 'openDoors' }); },
+  'day-1-staff': async () => {
+    await page.mouse.move(1, 1);
+    await page.evaluate(() => {
+      const s = window.__app.screen;
+      s.tab = 'staff';
+      const c = s.game.s.hall.find((h) => h.role === 'security');
+      if (c) s.order({ t: 'hire', candidate: c.id });
+    });
+  },
+  'floor-open': async () => {
+    await page.mouse.move(1, 1);
+    await page.evaluate(() => { window.__app.screen.tab = 'table'; });
+    await order({ t: 'openDoors' });
+  },
   'floor-busy': async () => { await step(page, Math.round(2.5 * H)); },
-  'bet-tooltip': async () => { const [x, y] = await toPage(page, 470, 18 + 28 + 11 + 2 * 11 + 3); await page.mouse.move(x, y); },
+  'bet-tooltip': async () => { const [x, y] = await toPage(page, 470, 18 + 14 + 27 + 11 + 2 * 11 + 3); await page.mouse.move(x, y); },
   'sweat-tooltip': async () => { const [x, y] = await toPage(page, 480, 16 + 184 + 17 + 14 + 3); await page.mouse.move(x, y); },
   'wheel-selected': async () => {
     await page.mouse.move(1, 1);
@@ -76,6 +89,34 @@ const SC = {
     await page.mouse.move(1, 1);
     await order({ t: 'spawn', type: 'highRoller' });
     await step(page, 400);
+  },
+  'cheat-spotted': async () => {
+    await page.mouse.move(1, 1);
+    await page.evaluate(() => {
+      const s = window.__app.screen, g = s.game.s;
+      s.selected = 0;
+      for (const m of g.staff) if (m.role === 'pitBoss') m.skill = 3;
+      s.order({ t: 'spawn', type: 'tourist', cheat: 'pastPoster' });
+      const a = g.agents[g.agents.length - 1];
+      a.bankroll = a.start = 2000000;
+      a.patience = 1e9;
+      a.winGoal = 1e12;
+      // hold the security guard back for the shot, so the spotted cheat is still at the table
+      const guards = g.staff.filter((m) => m.role === 'security');
+      for (const m of guards) m.role = 'cashier';
+      for (let t = 0; t < 30000 && !a.spotted; t++) s.tick();
+      for (const m of guards) m.role = 'security';
+      s.rs.selectedAgent = a.id;
+    });
+  },
+  'staff-night': async () => { await page.evaluate(() => { window.__app.screen.tab = 'staff'; }); },
+  'ejected': async () => {
+    await page.evaluate(() => {
+      const s = window.__app.screen, g = s.game.s;
+      s.order({ t: 'accuse', agent: s.rs.selectedAgent });
+      s.tab = 'table';
+    });
+    await step(page, 120);
   },
   'day-2': async () => {
     await page.evaluate(() => { window.__app.screen.game.s.cage = 5000000; });

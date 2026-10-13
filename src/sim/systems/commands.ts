@@ -6,9 +6,26 @@ import { TIME } from '../../data/time';
 import { standUp } from '../choice';
 import type { Command } from '../commands';
 import { spawnGambler } from './arrivals';
+import { dealerOf } from '../staff';
+import { STAFF } from '../../data/staff';
+import { CHEAT_RULES } from '../../data/cheats';
+import { dispatch } from './cheats';
+import { leave } from './agents';
 import { beginNight, buyoutPrice } from '../season';
 import { STRIP } from '../../data/strip';
 import type { GameState } from '../state';
+
+/** Close a table: its seated gamblers get up and look for another. */
+function closeTable(g: GameState, id: number) {
+  const t = g.tables[id];
+  t.open = false;
+  for (const aid of t.seats) {
+    if (aid < 0) continue;
+    const a = g.agents[aid];
+    standUp(g, a);
+    a.phase = 'choose';
+  }
+}
 
 function reject(g: GameState, reason: string) {
   g.now.push({ t: 'rejected', reason });
@@ -29,29 +46,24 @@ export function withPays(game: GameDef, bet: number, pays10: number, hits?: numb
 }
 
 /** Commands that only make sense in the day, or only at night. */
-const DAY_ONLY = new Set(['openDoors', 'transferCash', 'buyout', 'closeSeason']);
-const NIGHT_ONLY = new Set(['callArmoredCar', 'spawn']);
+const DAY_ONLY = new Set(['openDoors', 'transferCash', 'buyout', 'closeSeason', 'hire', 'fire']);
+const NIGHT_ONLY = new Set(['callArmoredCar', 'spawn', 'accuse']);
 
 function apply(g: GameState, c: Command) {
   if (g.result !== 'playing') return reject(g, 'the season is over');
   if (DAY_ONLY.has(c.t) && g.phase !== 'day') return reject(g, 'that waits for the day');
   if (NIGHT_ONLY.has(c.t) && g.phase !== 'night') return reject(g, 'that needs the doors open');
-  const table = 'table' in c ? g.tables[c.table] : undefined;
-  if ('table' in c && !table) return reject(g, 'no such table');
+  // (assign checks its own table: -1 takes a dealer off the floor)
+  const table = 'table' in c && c.t !== 'assign' ? g.tables[c.table] : undefined;
+  if ('table' in c && c.t !== 'assign' && !table) return reject(g, 'no such table');
   switch (c.t) {
     case 'openTable':
+      if (!dealerOf(g, table!.id)) return reject(g, 'the table needs a dealer');
       table!.open = true;
       break;
-    case 'closeTable': {
-      table!.open = false;
-      for (const id of table!.seats) {
-        if (id < 0) continue;
-        const a = g.agents[id];
-        standUp(g, a);
-        a.phase = 'choose';
-      }
+    case 'closeTable':
+      closeTable(g, table!.id);
       break;
-    }
     case 'setLimits': {
       const ok = c.min >= LIMITS.minFloor && c.min <= LIMITS.minCeil && c.max >= c.min * LIMITS.maxTimesMinLow && c.max <= c.min * LIMITS.maxTimesMinHigh;
       if (!ok) return reject(g, 'limits out of range');
@@ -75,12 +87,65 @@ function apply(g: GameState, c: Command) {
       break;
     }
     case 'spawn':
-      spawnGambler(g, c.type);
+      spawnGambler(g, c.type, c.cheat ?? null);
       break;
     case 'openDoors':
       if (g.night > STRIP.sliceNights) return reject(g, 'the season is over: buy the rival out or walk away');
+      if (!g.staff.some((s) => s.role === 'cashier')) return reject(g, 'the cage needs a cashier');
       beginNight(g);
       break;
+    case 'hire': {
+      const i = g.hall.findIndex((s) => s.id === c.candidate);
+      if (i < 0) return reject(g, 'no such candidate');
+      const s = g.hall.splice(i, 1)[0];
+      g.staff.push(s);
+      g.now.push({ t: 'hired', staff: s.id, role: s.role });
+      break;
+    }
+    case 'fire': {
+      const i = g.staff.findIndex((s) => s.id === c.staff);
+      if (i < 0) return reject(g, 'no such staff');
+      const s = g.staff[i];
+      g.staff.splice(i, 1);
+      if (s.role === 'dealer' && s.table >= 0) closeTable(g, s.table);
+      break;
+    }
+    case 'assign': {
+      const s = g.staff.find((m) => m.id === c.staff);
+      if (!s) return reject(g, 'no such staff');
+      if (c.table >= 0 && !g.tables[c.table]) return reject(g, 'no such table');
+      if (s.role === 'dealer') {
+        const from = s.table;
+        if (from === c.table) break;
+        // whoever deals there now swaps to this dealer's old table
+        const other = c.table >= 0 ? dealerOf(g, c.table) : undefined;
+        s.table = c.table;
+        if (other) other.table = from;
+        if (from >= 0 && !other) closeTable(g, from);
+      } else if (s.role === 'pitBoss') {
+        const i = s.watch.indexOf(c.table);
+        if (i >= 0) s.watch.splice(i, 1);
+        else if (s.watch.length >= STAFF.pitTables) return reject(g, 'a pit boss watches 3 tables at most');
+        else s.watch.push(c.table);
+      } else return reject(g, 'only dealers and pit bosses are assigned');
+      break;
+    }
+    case 'accuse': {
+      const a = g.agents[c.agent];
+      if (!a || a.phase === 'gone' || a.phase === 'leave') return reject(g, 'they are gone');
+      if (!g.staff.some((s) => s.role === 'security')) return reject(g, 'there is no security to walk them out');
+      g.now.push({ t: 'accused', agent: a.id, guilty: a.cheat !== null });
+      if (a.cheat) {
+        a.spotted = true;
+        dispatch(g, a);
+      } else {
+        // an honest gambler, accused: they leave, and the strip hears about it
+        g.wom -= CHEAT_RULES.wrongRep;
+        a.ejected = true;
+        leave(g, a);
+      }
+      break;
+    }
     case 'transferCash': {
       const to = c.cents;
       if ((to > 0 && to > g.bank) || (to < 0 && -to > g.cage)) return reject(g, 'not that much there');

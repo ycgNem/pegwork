@@ -1,10 +1,11 @@
 // The season (DESIGN.md §7, PLAN "The run"): the strip's crowd split among the houses, opening the
 // doors, the count at dawn, the rival's night and its move, the buyout. Pure; called from the
 // command and clock systems.
-import { ECONOMY } from '../data/economy';
 import { BUYOUT, STRIP, UNDERCUTTER } from '../data/strip';
 import { TABLE_KINDS } from '../data/tables';
 import { betOdds } from './odds/odds';
+import { rollHall, securityPost, wageOf } from './staff';
+import { center } from './floor';
 import type { GameState } from './state';
 
 /** Gamblers on the strip on a night. */
@@ -65,7 +66,12 @@ export function beginNight(g: GameState) {
   g.nextAgent = 0;
   g.deliveries = [];
   g.settle = [];
+  g.cheatRounds = [];
   g.wom = 0;
+  // tables with no dealer stay dark tonight; security starts at its post
+  for (const t of g.tables) if (!g.staff.some((s) => s.role === 'dealer' && s.table === t.id)) t.open = false;
+  const [sx, sy] = securityPost(g);
+  for (const s of g.staff) if (s.role === 'security') [s.x, s.y, s.px, s.py, s.tx, s.ty, s.target] = [center(sx), center(sy), center(sx), center(sy), sx, sy, -1];
   g.stats = { arrived: 0, left: 0, leftUp: 0, leftBroke: 0, rounds: 0, handle: 0, net: 0 };
   for (const t of g.tables) {
     t.acc = 0;
@@ -80,7 +86,7 @@ export function beginNight(g: GameState) {
 
 /** The count at dawn: wages, the book, reputation, the rival's night and its next move. */
 export function endNight(g: GameState) {
-  const wages = g.tables.filter((t) => t.open || t.rounds > 0).length * ECONOMY.dealerWage;
+  const wages = g.staff.reduce((n, s) => n + wageOf(s), 0);
   // wages come out of the bank, then the cage; a payroll the house can't meet finishes it
   const fromBank = Math.min(Math.max(0, g.bank), wages);
   g.bank -= fromBank;
@@ -101,6 +107,7 @@ export function endNight(g: GameState) {
     g.lostReason = 'The payroll bounced.';
   }
   if (!r.bought && g.result === 'playing') rivalMove(g);
+  rollHall(g);
   g.now.push({ t: 'dayBegins', night: g.night });
 }
 
